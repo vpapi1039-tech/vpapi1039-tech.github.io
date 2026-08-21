@@ -1,0 +1,2969 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Neon Breach</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#05050a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="screen-orientation" content="landscape">
+<meta name="x5-orientation" content="landscape">
+<meta name="full-screen" content="yes">
+<meta name="x5-fullscreen" content="true">
+<style>
+:root{--cyan:#7cfcff;--cyan-dim:#4fd8e0;--pink:#ff5fd6;--amber:#ffd166;--red:#ff4d4d;--green:#5cff9e;--purple:#c65fff;--ink:#05050a}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
+html,body{margin:0;padding:0;width:100%;height:100%;height:100dvh;overflow:hidden;background:#000;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;touch-action:none}
+#wrap{position:fixed;inset:0;width:100vw;height:100vh;height:100dvh}
+canvas{display:block;width:100%;height:100%;background:#000}
+#overlay{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;text-align:center;gap:10px;pointer-events:auto;touch-action:pan-y;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:24px 0 48px;background:radial-gradient(ellipse at 50% 40%,rgba(20,20,40,0.35),rgba(0,0,0,0.55))}
+#overlay.hidden{display:none}
+#title{font-size:44px;font-weight:800;letter-spacing:4px;color:var(--cyan);text-shadow:0 0 18px rgba(124,252,255,0.55),0 0 40px rgba(124,252,255,0.25);margin:0}
+#title.over{color:var(--red);text-shadow:0 0 18px rgba(255,77,77,0.55),0 0 40px rgba(255,77,77,0.25)}
+#stats{color:#e6f5ff;font-size:16px;opacity:0.9}
+#startBtn{pointer-events:auto;margin-top:14px;font-family:inherit;font-size:16px;font-weight:700;letter-spacing:2px;padding:13px 38px;border-radius:6px;border:none;cursor:pointer;background:var(--cyan);color:#000;box-shadow:0 0 24px rgba(0,224,255,0.45);transition:transform .12s ease,box-shadow .12s ease}
+#startBtn:active{transform:scale(0.96);box-shadow:0 0 10px rgba(0,224,255,0.35)}
+#startRow{pointer-events:auto;display:flex;gap:12px;margin-top:14px;flex-wrap:wrap;justify-content:center}
+#startRow #startBtn{margin-top:0}
+#continueBtn{pointer-events:auto;font-family:inherit;font-size:16px;font-weight:700;letter-spacing:2px;padding:13px 34px;border-radius:6px;cursor:pointer;background:transparent;color:var(--pink);border:2px solid var(--pink);box-shadow:0 0 18px rgba(255,95,214,0.3);transition:transform .12s ease,box-shadow .12s ease}
+#continueBtn:active{transform:scale(0.96);box-shadow:0 0 8px rgba(255,95,214,0.25)}
+#continueBtn.hidden{display:none}
+#vignette{position:fixed;inset:0;pointer-events:none;z-index:5;background:radial-gradient(ellipse at 50% 50%,rgba(255,0,0,0) 55%,rgba(255,0,0,0.4) 100%);opacity:0;transition:opacity .3s ease}
+#vignette.active{opacity:1;animation:vignettePulse 1.1s ease-in-out infinite}
+@keyframes vignettePulse{0%,100%{opacity:.55}50%{opacity:1}}
+#hitFlash{position:fixed;inset:0;pointer-events:none;z-index:6;background:rgba(255,40,40,0);transition:background .3s ease}
+#hud{position:fixed;inset:0;pointer-events:none;font-family:inherit}
+#hud.hidden{display:none}
+#score{position:absolute;top:14px;left:20px;font-size:26px;font-weight:800;color:var(--cyan);text-shadow:0 0 10px rgba(124,252,255,0.5)}
+#combo{position:absolute;top:48px;left:22px;font-size:12px;color:var(--pink);font-weight:600}
+#highScoreTag{position:absolute;top:74px;right:20px;font-size:13px;font-weight:700;letter-spacing:1px;color:var(--amber);text-shadow:0 0 8px rgba(255,209,102,0.4);text-align:right}
+#recordBanner{position:fixed;top:16%;left:50%;transform:translate(-50%,-30px);z-index:8;pointer-events:none;text-align:center;opacity:0;transition:opacity .35s ease,transform .35s ease}
+#recordBanner.active{opacity:1;transform:translate(-50%,0)}
+#recordBannerTitle{font-size:34px;font-weight:800;letter-spacing:4px;color:var(--amber);text-shadow:0 0 18px rgba(255,209,102,0.7),0 0 44px rgba(255,209,102,0.4);animation:recordPulse 1s ease-in-out infinite}
+#recordBannerSub{margin-top:6px;font-size:14px;font-weight:700;letter-spacing:1px;color:#fff2cf;opacity:0.9}
+@keyframes recordPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+@media (max-width:600px){
+  #recordBannerTitle{font-size:24px}
+  #recordBannerSub{font-size:11px}
+}
+#hpBarBack{position:absolute;top:70px;left:20px;width:220px;height:14px;border:2px solid var(--cyan-dim);border-radius:3px;overflow:hidden;background:rgba(0,0,0,0.3)}
+#hpBarFill{height:100%;width:100%;background:linear-gradient(90deg,#00ffb0,var(--cyan-dim));transition:width .12s linear}
+#levelTag{position:absolute;top:70px;left:250px;font-size:13px;font-weight:800;color:var(--amber);letter-spacing:1px;text-shadow:0 0 8px rgba(255,209,102,0.5)}
+#expBarBack{position:absolute;top:88px;left:20px;width:220px;height:6px;border:1px solid rgba(198,95,255,0.55);border-radius:3px;overflow:hidden;background:rgba(0,0,0,0.3)}
+#expBarFill{height:100%;width:0%;background:linear-gradient(90deg,var(--purple),var(--pink));transition:width .12s linear}
+#wave{position:absolute;top:54px;right:20px;font-size:13px;font-weight:700;color:var(--amber);letter-spacing:1px}
+#weaponTag{position:absolute;top:104px;left:20px;font-size:11px;font-weight:600;letter-spacing:1px;color:#c6f5ff;opacity:0.8;text-transform:uppercase}
+#ammoTag{position:absolute;top:122px;left:20px;font-size:12px;font-weight:700;letter-spacing:0.5px;color:var(--cyan);opacity:0.9;font-variant-numeric:tabular-nums;transition:color .15s ease}
+#ammoTag.reloading{color:var(--amber)}
+#ammoTag.lowheat{color:var(--red);animation:lowHeatPulse .5s ease-in-out infinite}
+@keyframes lowHeatPulse{0%,100%{opacity:1}50%{opacity:.45}}
+#pauseBtn{position:absolute;top:16px;right:20px;pointer-events:auto;cursor:pointer;width:38px;height:38px;border-radius:8px;border:2px solid var(--cyan-dim);background:rgba(5,5,10,0.55);color:var(--cyan);font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center;box-shadow:0 0 12px rgba(124,252,255,0.2)}
+#pauseBtn:active{transform:scale(0.94)}
+#fireBtn{position:absolute;top:150px;left:210px;pointer-events:auto;cursor:pointer;width:78px;height:78px;border-radius:50%;border:2px solid var(--pink);background:rgba(255,95,214,0.16);color:var(--pink);display:flex;align-items:center;justify-content:center;box-shadow:0 0 16px rgba(255,95,214,0.35);touch-action:none;transition:background .1s ease,box-shadow .1s ease,transform .1s ease}
+#fireBtn svg{width:32px;height:32px;fill:none;stroke:currentColor;stroke-width:2;filter:drop-shadow(0 0 4px currentColor)}
+#fireBtn.active{background:rgba(255,95,214,0.5);box-shadow:0 0 26px rgba(255,95,214,0.7);transform:scale(0.94)}
+#fireBtn.hidden{display:none}
+@media (min-width:900px){
+  #fireBtn{display:none}
+}
+#controls{position:fixed;inset:0;pointer-events:none}
+#controls.hidden{display:none}
+.stick-zone{position:absolute;bottom:26px;width:150px;height:150px;border-radius:50%;pointer-events:auto;touch-action:none}
+#aimZone{width:170px;height:170px}
+#moveZone{left:26px}
+#aimZone{right:26px}
+.stick-base{position:absolute;inset:0;border-radius:50%;background:transparent;border:none;box-shadow:none}
+.stick-knob{position:absolute;width:62px;height:62px;border-radius:50%;left:50%;top:50%;transform:translate(-50%,-50%);background:transparent;box-shadow:none;transition:background .08s ease,box-shadow .08s ease}
+.stick-knob.firing{background:rgba(255,95,214,0.28);box-shadow:0 0 18px rgba(255,95,214,0.55)}
+.stick-label{display:none}
+@media (min-width:900px){
+  .stick-zone{display:none}
+}
+@media (pointer:coarse){
+  .stick-zone{display:block}
+}
+#charSelect{pointer-events:auto;margin-top:18px;display:flex;flex-direction:column;align-items:center;gap:10px}
+#settingsSection{pointer-events:auto;margin-top:16px;display:flex;flex-direction:column;align-items:center;gap:8px}
+#settingsLabel{font-size:12px;letter-spacing:3px;color:#9fd8e0;opacity:0.85}
+.toggle-row{display:flex;align-items:center;gap:9px;cursor:pointer;color:#cfe9ee;font-size:13px;padding:8px 16px;border:1px solid rgba(124,252,255,0.3);border-radius:8px;background:rgba(10,14,26,0.6);transition:border-color .12s ease,box-shadow .12s ease}
+.toggle-row:hover{border-color:var(--cyan-dim);box-shadow:0 0 12px rgba(124,252,255,0.15)}
+.toggle-row input{width:16px;height:16px;accent-color:var(--pink);cursor:pointer}
+#charSelectLabel{font-size:12px;letter-spacing:3px;color:#9fd8e0;opacity:0.85}
+#charCards{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+#skinSection{pointer-events:auto;margin-top:14px;display:flex;flex-direction:column;align-items:center;gap:8px}
+#skinLabel{font-size:11px;letter-spacing:3px;color:#9fd8e0;opacity:0.85}
+#skinSwatches{display:flex;gap:11px;flex-wrap:wrap;justify-content:center}
+.skin-swatch{width:28px;height:28px;border-radius:50%;cursor:pointer;border:2px solid rgba(255,255,255,0.22);box-shadow:0 0 8px rgba(255,255,255,0.12);transition:transform .12s ease,border-color .12s ease,box-shadow .12s ease}
+.skin-swatch:hover{transform:scale(1.12)}
+.skin-swatch.selected{border-color:#fff;box-shadow:0 0 16px currentColor,0 0 4px #fff}
+.char-card{width:130px;min-height:150px;border:2px solid var(--cyan-dim);border-radius:10px;background:rgba(10,14,26,0.78);padding:14px 10px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:8px;transition:transform .12s ease,box-shadow .12s ease,border-color .12s ease;box-shadow:0 0 14px rgba(124,252,255,0.12)}
+.char-card:hover{transform:translateY(-3px)}
+.char-card.selected{border-color:var(--pink);box-shadow:0 0 26px rgba(255,95,214,0.4)}
+.char-icon{width:44px;height:44px;display:flex;align-items:center;justify-content:center}
+.char-icon svg{width:100%;height:100%;filter:drop-shadow(0 0 6px currentColor)}
+.char-name{font-size:13px;font-weight:800;letter-spacing:0.5px}
+.char-desc{font-size:11px;color:#cfe9ee;opacity:0.9;line-height:1.35}
+@media (max-width:600px){
+  .char-card{width:27vw;min-height:130px;padding:10px 6px}
+  .char-desc{font-size:10px}
+}
+#levelupOverlay{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 40%,rgba(20,10,40,0.55),rgba(0,0,0,0.8));pointer-events:auto;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;padding:20px 0}
+#levelupOverlay.hidden{display:none}
+#levelupPanel{text-align:center;max-width:900px;padding:0 20px}
+#levelupTitle{font-size:36px;font-weight:800;letter-spacing:4px;color:var(--purple);margin:0 0 6px;text-shadow:0 0 18px rgba(198,95,255,0.6),0 0 40px rgba(198,95,255,0.3);animation:levelupHue 3s linear infinite}
+@keyframes levelupHue{0%{filter:hue-rotate(0deg)}100%{filter:hue-rotate(360deg)}}
+#levelupSub{color:#e6f5ff;font-size:14px;opacity:0.85;margin-bottom:22px}
+#levelupCards{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+.levelup-card{width:220px;min-height:150px;border:2px solid var(--cyan-dim);border-radius:10px;background:rgba(10,14,26,0.78);padding:18px 16px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;transition:transform .12s ease,box-shadow .12s ease,border-color .12s ease;box-shadow:0 0 14px rgba(124,252,255,0.12)}
+.levelup-card:hover,.levelup-card:active{transform:translateY(-4px) scale(1.03);border-color:var(--pink);box-shadow:0 0 26px rgba(255,95,214,0.35)}
+.lu-name{font-size:15px;font-weight:800;color:var(--cyan);letter-spacing:0.5px}
+.lu-desc{font-size:12.5px;color:#cfe9ee;opacity:0.9;line-height:1.4}
+@media (max-width:600px){
+  .levelup-card{width:44vw;min-height:130px;padding:14px 10px}
+  #levelupTitle{font-size:26px}
+}
+#pauseOverlay{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 40%,rgba(10,20,40,0.55),rgba(0,0,0,0.8));pointer-events:auto;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;padding:20px 0}
+#pauseOverlay.hidden{display:none}
+#pausePanel{text-align:center}
+#pauseTitle{font-size:36px;font-weight:800;letter-spacing:6px;color:var(--cyan);margin:0 0 8px;text-shadow:0 0 18px rgba(124,252,255,0.6),0 0 40px rgba(124,252,255,0.3)}
+#pauseStats{color:#e6f5ff;font-size:14px;opacity:0.85;margin-bottom:22px}
+#pauseRow{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+#resumeBtn,#quitBtn{font-family:inherit;font-size:16px;font-weight:700;letter-spacing:2px;padding:13px 34px;border-radius:6px;cursor:pointer;transition:transform .12s ease,box-shadow .12s ease}
+#resumeBtn{border:none;background:var(--cyan);color:#000;box-shadow:0 0 24px rgba(0,224,255,0.45)}
+#resumeBtn:active{transform:scale(0.96);box-shadow:0 0 10px rgba(0,224,255,0.35)}
+#quitBtn{background:transparent;color:var(--red);border:2px solid var(--red);box-shadow:0 0 18px rgba(255,77,77,0.25)}
+#quitBtn:active{transform:scale(0.96);box-shadow:0 0 8px rgba(255,77,77,0.2)}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="game"></canvas>
+  <div id="vignette"></div>
+  <div id="hitFlash"></div>
+
+  <div id="hud" class="hidden">
+    <div id="score">0</div>
+    <div id="combo">x1.0 combo</div>
+    <div id="highScoreTag">BEST 0</div>
+    <div id="hpBarBack"><div id="hpBarFill"></div></div>
+    <div id="levelTag">LV 1</div>
+    <div id="expBarBack"><div id="expBarFill"></div></div>
+    <div id="weaponTag">basic</div>
+    <div id="ammoTag">15 / 15</div>
+    <div id="wave">WAVE 1</div>
+    <button id="pauseBtn" aria-label="Pause">❚❚</button>
+    <button id="fireBtn" class="hidden" aria-label="Fire">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"></circle><line x1="12" y1="2" x2="12" y2="7"></line><line x1="12" y1="17" x2="12" y2="22"></line><line x1="2" y1="12" x2="7" y2="12"></line><line x1="17" y1="12" x2="22" y2="12"></line></svg>
+    </button>
+  </div>
+
+  <div id="recordBanner">
+    <div id="recordBannerTitle">NEW HIGH SCORE!</div>
+    <div id="recordBannerSub"></div>
+  </div>
+
+  <div id="controls" class="hidden">
+    <div id="moveZone" class="stick-zone">
+      <div class="stick-base"></div>
+      <div class="stick-knob" id="moveKnob"></div>
+      <div class="stick-label">MOVE</div>
+    </div>
+    <div id="aimZone" class="stick-zone">
+      <div class="stick-base"></div>
+      <div class="stick-knob" id="aimKnob"></div>
+      <div class="stick-label">AIM / FIRE</div>
+    </div>
+  </div>
+
+  <div id="overlay">
+    <h1 id="title">NEON BREACH</h1>
+    <div id="stats"></div>
+    <div id="charSelect">
+      <div id="charSelectLabel">CHOOSE YOUR UNIT</div>
+      <div id="charCards"></div>
+    </div>
+    <div id="skinSection">
+      <div id="skinLabel">SKIN</div>
+      <div id="skinSwatches"></div>
+    </div>
+    <div id="settingsSection">
+      <div id="settingsLabel">PREFERENCES</div>
+      <label class="toggle-row" for="soundToggle">
+        <input type="checkbox" id="soundToggle" checked>
+        <span>Sound effects</span>
+      </label>
+      <label class="toggle-row" for="flareToggle">
+        <input type="checkbox" id="flareToggle" checked>
+        <span>Character flare on shoot</span>
+      </label>
+    </div>
+    <div id="startRow">
+      <button id="startBtn">START</button>
+      <button id="continueBtn" class="hidden">CONTINUE</button>
+    </div>
+  </div>
+
+  <div id="levelupOverlay" class="hidden">
+    <div id="levelupPanel">
+      <h2 id="levelupTitle">LEVEL UP!</h2>
+      <div id="levelupSub">Choose a bonus</div>
+      <div id="levelupCards"></div>
+    </div>
+  </div>
+
+  <div id="pauseOverlay" class="hidden">
+    <div id="pausePanel">
+      <h2 id="pauseTitle">PAUSED</h2>
+      <div id="pauseStats"></div>
+      <div id="pauseRow">
+        <button id="resumeBtn">RESUME</button>
+        <button id="quitBtn">QUIT</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+  // ============================================================
+  // NEON BREACH — top-down survival shooter, single-file canvas game
+  // Section map (search for the "── TITLE ──" banners below):
+  //   CONFIG — tunable constants: world size, player/weapon/enemy stats, waves, bosses, skills
+  //   PREFS — localStorage settings (audio/vibration/etc toggles)
+  //   CANVAS / VIEWPORT — sizing, DPR, camera zoom
+  //   MATH & OBSTACLE UTILS — distance, obstacle shape gen, collision push-out
+  //   SCREEN FX HELPERS — hit flash, shockwave rings
+  //   PLAYER — leveling curve, player factory, shield-stack sync
+  //   CHECKPOINT / SAVE SYSTEM — mid-run save/load/clear to localStorage
+  //   INPUT — keyboard, virtual joysticks (touch), camera follow
+  //   CHARACTER SELECT UI — icon svg + card builder
+  //   GAME FLOW — menu/start/continue/pause/resume/quit, overlay show/hide, run reset
+  //   LEVEL-UP / SKILL CHOICE SYSTEM — offer, render, apply picked skill
+  //   ENEMY SPAWNING & AI — wave/boss spawns, sentinel + ghost behavior, enemy factory
+  //   PARTICLE EFFECTS — hit sparks, explosions, rainbow/glitter bursts
+  //   WEAPONS / COMBAT — reload, raycast for laser, line-segment dist, laser tick, bullet firing
+  //   MAIN UPDATE LOOP — per-frame physics, collisions, spawns, state transitions
+  //   RENDERING — player/enemy sprite drawers, trail, laser beam, main render()
+  //   HUD — DOM text/bar updates each frame
+  //   GAME LOOP BOOTSTRAP — rAF loop + initial boot
+  // ============================================================
+
+  // ── CONFIG — tunable constants: world size, player/weapon/enemy stats, waves, bosses, skills ──
+  const CONFIG = {
+    world: { w: 3200, h: 2200 },
+    player: {
+      r: 14, hp: 100, speed: 4.4, fireRate: 165,
+      lowHpThreshold: 20,      // at/below this hp, player takes reduced dmg
+      lowHpMinReduction: 0.50, // reduction at threshold hp
+      lowHpMaxReduction: 0.90, // reduction as hp approaches 1
+      bulletSpeed: 10, bulletR: 4, bulletMaxR: 9, bulletLife: 60,
+      regenDelayMs: 4000,      // Nanite Regeneration: must go this long without taking damage before it kicks in
+      regenHpPerSecPerStack: 1.5, // Nanite Regeneration: max HP restored per second, per stack
+      shieldMaxStacks: 5,       // Shield Generator: hard cap on stacked charges
+      shieldSpeedPerStack: 0.20,   // +movement speed per active shield stack
+      shieldDmgPerStack: 0.20,     // +bullet damage per active shield stack
+      shieldAtkSpeedPerStack: 0.05,// +attack speed per active shield stack
+      ricochetAmmoChancePerStack: 0.10, // Bullet Bounce: chance a ricocheted bullet refunds 1 mag round on enemy hit, per stack
+      ricochetAmmoChanceCap: 0.50,      // hard cap on that chance (reached at 5 stacks)
+      explosiveRadius: 70,     // Explosive Impact: AOE blast radius
+      magazineSize: 15,        // bullets per magazine before a reload is forced
+      reloadMs: 1500,          // time to fully reload
+      reloadMinMs: 350,        // floor so Reload Speed skill can't reach 0
+    },
+    weapons: {
+      basic:  { fireRate: 165, color: '#bff3ff' },
+      rapid:  { fireRate: 70,  durationMs: 6000, color: '#ffd166' },
+      spread: { fireRate: 190, durationMs: 7000, count: 3, spreadAngle: 0.28, color: '#ff5fd6' },
+      laser:  { color: '#eaff4d', dps: 42, range: 300, width: 10, // continuous piercing beam, no ammo/reload
+        maxHeat: 100, heatDrainPerSec: 34, heatRegenPerSec: 26, overheatRegenThreshold: 32, // heat limit: ~2.9s of continuous fire before forced shutoff
+        lowHeatWarnFrac: 0.25, // HUD pulses amber once heat drops below this fraction
+        turnRateRad: Math.PI * 0.32, // max radians/sec the aim can turn while the beam is firing (hard to turn while shooting)
+        moveSpeedMult: 0.5, // movement speed multiplier while firing AND moving
+      },
+    },
+    enemy: {
+      bulletDamage: 12,
+      hpScalePerWave: 0.15, // enemy max HP compounds by this fraction every wave
+      types: {
+        grunt:    { r: 16, speed: 1.652, hp: 20, dmg: 10, pts: 10, exp: 8,  color: '#ff5f7a' },
+        sprinter: { r: 11, speed: 2.97,  hp: 12, dmg: 8,  pts: 16, exp: 10, color: '#ffd166' },
+        brute:    { r: 26, speed: 1.029, hp: 84, dmg: 22, pts: 40, exp: 25, color: '#c65fff' },
+        ghost:    { r: 19, speed: 1.68,  hp: 560, dmg: 16, pts: 450, exp: 200, color: '#ffffff' },
+        sentinel: { r: 34, speed: 1.35, hp: 2600, dmg: 24, pts: 900, exp: 500, color: '#5fe0ff' },
+      },
+      sprinterMinWave: 2, sprinterRoll: 0.6,
+      bruteMinWave: 3, bruteRoll: 0.85,
+      bruteExplodeChance: 0.10,  // chance a dying brute detonates
+      bruteExplodeRadius: 90,    // AOE blast radius
+      bruteExplodeDamage: 25,    // damage dealt to player/enemies caught in the blast
+      sprinterRanged: {          // sprinters kite the player and shoot instead of rushing in
+        range: 160,             // preferred standoff distance
+        slop: 24,               // hysteresis band around range so it doesn't jitter in/out
+        fireRateMsEarly: 2100,  // sluggish fire rate for a brand-new sprinter (wave sprinterMinWave)
+        fireRateMsCap: 850,     // fastest fire rate once fully scaled up
+        bulletSpeed: 6.2,
+        bulletR: 4,
+        bulletLife: 75,
+        bulletDamage: 7,
+        strafeMult: 0.55,       // fraction of normal speed used to strafe once fully scaled up
+        agilityMultEarly: 0.4,  // fraction of full move speed a brand-new sprinter has
+        scaleCapWave: 15,       // wave at which sprinter speed/tactics reach full strength
+      },
+    },
+    wave: {
+      base: 6, perWave: 5, quadratic: 0.9, countCap: 70,
+      staggerStart: 260, staggerPerWave: 18, staggerMin: 70,
+    },
+    boss: {
+      spawnDist: 420,                    // ring radius the ghosts spawn at around the player
+      bannerMs: 4500,                    // how long the intro banner stays fully prominent
+      pinkyLead: 150,                    // how far ahead of the player Pinky aims her ambush
+      clydeShyRange: 180,                // Clyde flees inside this range, chases outside it
+      ghostShooter: {                    // stats for whichever ghost has shooter:true (currently Pinky)
+        fireRateMs: 1500, bulletSpeed: 6.4, bulletR: 4, bulletLife: 90, bulletDamage: 11,
+      },
+      retreatHpFrac: 0.25,                // below this fraction of max HP, a ghost turns tail and runs
+      retreatSpeedMult: 1.9,              // ghosts sprint away much faster than normal while fleeing
+      maxFlees: 2,                        // each ghost can only pull this panic-flee off twice per fight
+      fleeRegenPerSec: 0.18,              // fast fraction of max HP regenerated per second while fleeing
+      fleeRegenCapFrac: 0.40,             // fleeing regen tops out here, then the ghost rejoins the fight
+      regenDelayMs: 3000,                 // must go this long without taking damage before regen kicks in
+      regenPerSec: 0.035,                 // fraction of max HP regenerated per second once regen is active
+    },
+    boss2: {
+      name: 'THE SENTINEL',
+      spawnDist: 360,                    // distance ahead of the player it materializes at
+      bannerMs: 4500,                    // how long the intro banner stays fully prominent
+      hoverRange: 250,                   // distance it tries to hold from the player
+      hoverSlop: 40,                     // hysteresis band around hoverRange
+      strafeSpeedMult: 0.6,              // fraction of speed used to strafe while holding range
+      ring: {                            // 360° bullet ring fired at intervals
+        intervalMs: 2600, count: 14, bulletSpeed: 4.6, bulletR: 5, bulletLife: 110, bulletDamage: 9,
+        phaseStep: 0.35,                 // rotates the ring pattern a bit each volley
+      },
+      burst: {                           // 3-shot aimed spread fired at intervals (offset from the ring timer)
+        intervalMs: 1500, count: 3, spreadAngle: 0.32,
+        bulletSpeed: 7.2, bulletR: 4, bulletLife: 80, bulletDamage: 10,
+      },
+      enrageHpFrac: 0.5,                 // hp fraction that triggers phase 2
+      enrageAddCount: 3,                 // reinforcements summoned once, on entering phase 2
+      enrageFireRateMult: 0.68,          // interval multiplier once enraged (lower = faster)
+      enrageSpeedMult: 1.35,             // speed multiplier once enraged
+      telegraphMs: 650,                  // how long the ring-charge glow shows before it fires
+    },
+    combo: { gainPerKill: 0.15, max: 8, windowSec: 2.2 },
+    shake: { onHit: 4, onHitCap: 18, onKill: 6, onKillCap: 20, decay: 0.9 },
+    particles: {
+      maxAlive: 320, fadeRate: 1.6,
+      hitBurst: { n: 9, speed: 3.6 },
+      hitSpark: { n: 5, speed: 6.5 },
+      muzzle: { n: 3, speed: 2 },
+      killBurst: { n: 18, speed: 6, sparkChance: 0.4, glintRatio: 0.15 },
+    },
+    leveling: { base: 30, perLevel: 18, quad: 1.2 }, // expToNext(level) curve
+    pickup: {
+      orbR: 5,             // visual/collision size of a dropped exp orb
+      baseMagnet: 46,      // pull range with no Magnet Radius skill at all
+      pullSpeedMin: 3.2,   // pull speed at the outer edge of the magnet range
+      pullSpeedMax: 11,    // pull speed once the orb is right next to the player
+      maxAlive: 220,       // safety cap so a huge wipe can't spawn unbounded orbs
+      hpDropChance: 0.02,  // ~1 in 50 kills drops a heal pickup
+      hpHeal: 10,          // hp restored by a heal pickup
+      hpOrbR: 6,           // visual/collision size of a heal pickup
+      coreDropChance: 0.015, // ~1 in 67 kills drops an Overdrive Core
+      coreOrbR: 6,          // visual/collision size of a core pickup
+      coreHeatRestoreFrac: 0.5, // fraction of max beam heat an Overdrive Core restores
+      coreOverdriveMs: 4000, // duration of the post-pickup overdrive buff (fire rate / no-overheat window)
+    },
+    obstacles: {
+      count: 24,           // number of crystal/wreck clusters scattered in the world
+      minR: 26, maxR: 58,  // collision radius range
+      minSpawnDist: 280,   // no obstacle may spawn this close to the player's start point
+      minGap: 40,          // minimum gap enforced between obstacle centers (r1+r2+gap)
+      bulletDestroyChance: 0, // reserved (obstacles are indestructible for now)
+      colors: ['#c65fff', '#ff5fd6', '#ffd166', '#4fd8e0'],
+    },
+  };
+
+  const CHARACTERS = {
+    square: {
+      id: 'square', name: 'BULWARK', shape: 'square', color: '#7cfcff',
+      desc: '+50 HP, +10% crit, -10% dmg taken, -10% speed',
+      mods: { hpBonus: 50, speedMult: 0.90, critChance: 0.10, dmgReduction: 0.10 },
+    },
+    triangle: {
+      id: 'triangle', name: 'VANGUARD', shape: 'triangle', color: '#5cff9e',
+      desc: '+15% speed, +12% fire rate, +10 range, +10% dmg, -25 HP',
+      mods: { hpBonus: -25, speedMult: 1.15, fireRateMult: 1 / 1.12, bulletRangeBonus: 10, bulletDamageMult: 1.10 },
+    },
+    circle: {
+      id: 'circle', name: 'WARDEN', shape: 'circle', color: '#ff5fd6',
+      desc: '+magnet, huge 300-range thorn aura, -10 magazine, picks from 4 skills on level up',
+      mods: { magnetRadius: 140, thornDamage: 10, thornRadius: 300, magazineBonus: -10, skillChoiceBonus: 1 },
+    },
+    diamond: {
+      id: 'diamond', name: 'PRISM', shape: 'diamond', color: '#eaff4d',
+      desc: 'Innate laser beam (never reloads), +8% speed, +60 beam range, +8% crit, -20 HP',
+      mods: { hpBonus: -20, speedMult: 1.08, critChance: 0.08, bulletRangeBonus: 60 },
+      innateWeapon: 'laser',
+    },
+  };
+  let selectedCharacter = 'square';
+  // Declared here (before any function that could reference it) rather than at its
+  // original load-time spot further down, to rule out any TDZ ('Cannot access before
+  // initialization') if something ends up calling getSkin()/saveSelectedSkins() earlier
+  // than expected during setup.
+  let selectedSkins = {};
+
+  // Purely cosmetic recolors per character — same shape/stats, different palette. 'classic'
+  // always matches the character's base CHARACTERS color so the default look is unchanged.
+  const SKINS = {
+    square: [
+      { id: 'classic', name: 'Classic', color: '#7cfcff' },
+      { id: 'crimson', name: 'Crimson', color: '#ff4d4d' },
+      { id: 'toxic',   name: 'Toxic',   color: '#5cff9e' },
+      { id: 'royal',   name: 'Royal',   color: '#c65fff' },
+      { id: 'gold',    name: 'Gold',    color: '#ffd166' },
+    ],
+    triangle: [
+      { id: 'classic', name: 'Classic', color: '#5cff9e' },
+      { id: 'crimson', name: 'Crimson', color: '#ff4d4d' },
+      { id: 'cyan',    name: 'Cyan',    color: '#7cfcff' },
+      { id: 'royal',   name: 'Royal',   color: '#c65fff' },
+      { id: 'gold',    name: 'Gold',    color: '#ffd166' },
+    ],
+    circle: [
+      { id: 'classic', name: 'Classic', color: '#ff5fd6' },
+      { id: 'cyan',     name: 'Cyan',    color: '#7cfcff' },
+      { id: 'toxic',    name: 'Toxic',   color: '#5cff9e' },
+      { id: 'royal',    name: 'Royal',   color: '#c65fff' },
+      { id: 'gold',     name: 'Gold',    color: '#ffd166' },
+    ],
+    diamond: [
+      { id: 'classic', name: 'Classic', color: '#eaff4d' },
+      { id: 'crimson', name: 'Crimson', color: '#ff4d4d' },
+      { id: 'cyan',    name: 'Cyan',    color: '#7cfcff' },
+      { id: 'royal',   name: 'Royal',   color: '#c65fff' },
+      { id: 'pink',    name: 'Pink',    color: '#ff5fd6' },
+    ],
+  };
+
+  // The wave-15 boss fight: four ghosts, each with the classic personality/behavior.
+  const GHOST_GANG = [
+    { id: 'blinky', name: 'BLINKY', color: '#ff2b2b', speedMult: 1.18 * 1.2, behavior: 'chase'  }, // relentless direct pursuit
+    { id: 'pinky',  name: 'PINKY',  color: '#ffb3ec', speedMult: 1.0  * 1.2, behavior: 'ambush', shooter: true }, // cuts off where you're heading, and takes potshots
+    { id: 'inky',   name: 'INKY',   color: '#5fe0ff', speedMult: 1.02 * 1.2, behavior: 'flank'  }, // erratic, swings wide then in
+    { id: 'clyde',  name: 'CLYDE',  color: '#ffb347', speedMult: 0.92 * 1.2, behavior: 'shy'    }, // chases from afar, flees up close
+  ];
+
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const overlay = document.getElementById('overlay');
+  const titleEl = document.getElementById('title');
+  const statsEl = document.getElementById('stats');
+  const startBtn = document.getElementById('startBtn');
+  const charCardsEl = document.getElementById('charCards');
+  const skinSwatchesEl = document.getElementById('skinSwatches');
+  const continueBtn = document.getElementById('continueBtn');
+  const hud = document.getElementById('hud');
+  const controls = document.getElementById('controls');
+  const vignetteEl = document.getElementById('vignette');
+  const hitFlashEl = document.getElementById('hitFlash');
+  const scoreEl = document.getElementById('score');
+  const comboEl = document.getElementById('combo');
+  const hpFillEl = document.getElementById('hpBarFill');
+  const waveEl = document.getElementById('wave');
+  const weaponTagEl = document.getElementById('weaponTag');
+  const ammoTagEl = document.getElementById('ammoTag');
+  const levelEl = document.getElementById('levelTag');
+  const expFillEl = document.getElementById('expBarFill');
+  const highScoreTagEl = document.getElementById('highScoreTag');
+  const recordBannerEl = document.getElementById('recordBanner');
+  const recordBannerSubEl = document.getElementById('recordBannerSub');
+  const levelupOverlay = document.getElementById('levelupOverlay');
+  const levelupSub = document.getElementById('levelupSub');
+  const levelupCards = document.getElementById('levelupCards');
+  const pauseBtn = document.getElementById('pauseBtn');
+  const fireBtn = document.getElementById('fireBtn');
+  let fireBtnDown = false;
+  const setFireBtnDown = (v) => { fireBtnDown = v; fireBtn.classList.toggle('active', v); };
+  fireBtn.addEventListener('pointerdown', e => { e.preventDefault(); fireBtn.setPointerCapture && fireBtn.setPointerCapture(e.pointerId); setFireBtnDown(true); });
+  fireBtn.addEventListener('pointerup', () => setFireBtnDown(false));
+  fireBtn.addEventListener('pointercancel', () => setFireBtnDown(false));
+  fireBtn.addEventListener('pointerleave', () => setFireBtnDown(false));
+  const pauseOverlay = document.getElementById('pauseOverlay');
+  const pauseStats = document.getElementById('pauseStats');
+  const resumeBtn = document.getElementById('resumeBtn');
+  const quitBtn = document.getElementById('quitBtn');
+  const flareToggle = document.getElementById('flareToggle');
+  const soundToggle = document.getElementById('soundToggle');
+
+  const PREFS_KEY = 'neonBreach.prefs.v1';
+  // ── PREFS — localStorage settings (audio/vibration/etc toggles) ──
+  function loadPrefs() {
+    try {
+      const raw = localStorage.getItem(PREFS_KEY);
+      const saved = raw ? JSON.parse(raw) : {};
+      return {
+        flareOnShoot: saved.flareOnShoot !== undefined ? saved.flareOnShoot : true,
+        sound: saved.sound !== undefined ? saved.sound : true,
+      };
+    } catch (e) { return { flareOnShoot: true, sound: true }; }
+  }
+  function savePrefs() {
+    try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch (e) { /* ignore */ }
+  }
+  const prefs = loadPrefs();
+  flareToggle.checked = prefs.flareOnShoot;
+  flareToggle.addEventListener('change', () => {
+    prefs.flareOnShoot = flareToggle.checked;
+    savePrefs();
+  });
+  soundToggle.checked = prefs.sound;
+  soundToggle.addEventListener('change', () => {
+    prefs.sound = soundToggle.checked;
+    savePrefs();
+    if (!prefs.sound) laserSfxStop();
+  });
+
+  // ── AUDIO — lightweight synthesized SFX (Web Audio API oscillators/noise, no external
+  // assets to load). Gated by prefs.sound. The AudioContext is created lazily on the first
+  // user gesture since browsers block autoplay before any interaction. ──
+  let actx = null, masterGain = null, noiseBuffer = null;
+  function ensureAudio() {
+    if (actx) return actx;
+    try {
+      actx = new (window.AudioContext || window.webkitAudioContext)();
+      masterGain = actx.createGain();
+      masterGain.gain.value = 0.45;
+      masterGain.connect(actx.destination);
+    } catch (e) { actx = null; }
+    return actx;
+  }
+  ['pointerdown', 'keydown'].forEach(evt => window.addEventListener(evt, () => {
+    const c = ensureAudio();
+    if (c && c.state === 'suspended') c.resume().catch(() => {});
+  }, { once: true }));
+
+  function getNoiseBuffer() {
+    if (noiseBuffer) return noiseBuffer;
+    const size = actx.sampleRate * 0.5;
+    noiseBuffer = actx.createBuffer(1, size, actx.sampleRate);
+    const data = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < size; i++) data[i] = Math.random() * 2 - 1;
+    return noiseBuffer;
+  }
+  // Short tone with a fast attack + exponential decay, optionally sliding pitch — covers
+  // shots, blips, pings, and the ascending/descending stings used for level-ups etc.
+  function sfxTone({ freq = 440, freqEnd = null, dur = 0.09, type = 'square', vol = 0.18, attack = 0.004, delay = 0 }) {
+    if (!prefs.sound || !ensureAudio()) return;
+    if (actx.state === 'suspended') actx.resume().catch(() => {});
+    const t0 = actx.currentTime + delay;
+    const osc = actx.createOscillator();
+    osc.type = type;
+    osc.frequency.setValueAtTime(Math.max(1, freq), t0);
+    if (freqEnd !== null) osc.frequency.exponentialRampToValueAtTime(Math.max(1, freqEnd), t0 + dur);
+    const g = actx.createGain();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.linearRampToValueAtTime(vol, t0 + attack);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    osc.connect(g); g.connect(masterGain);
+    osc.start(t0); osc.stop(t0 + dur + 0.02);
+  }
+  // Filtered noise burst — covers impacts, explosions, and damage thuds.
+  function sfxNoise({ dur = 0.14, vol = 0.25, freq = 1800, type = 'bandpass', q = 1, delay = 0 }) {
+    if (!prefs.sound || !ensureAudio()) return;
+    if (actx.state === 'suspended') actx.resume().catch(() => {});
+    const t0 = actx.currentTime + delay;
+    const src = actx.createBufferSource();
+    src.buffer = getNoiseBuffer();
+    const filter = actx.createBiquadFilter();
+    filter.type = type; filter.frequency.value = freq; filter.Q.value = q;
+    const g = actx.createGain();
+    g.gain.setValueAtTime(vol, t0);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    src.connect(filter); filter.connect(g); g.connect(masterGain);
+    src.start(t0); src.stop(t0 + dur + 0.02);
+  }
+
+  function sfxShoot(weapon) {
+    if (weapon === 'rapid') sfxTone({ freq: 920, freqEnd: 680, dur: 0.045, type: 'square', vol: 0.09 });
+    else if (weapon === 'spread') sfxTone({ freq: 640, freqEnd: 460, dur: 0.06, type: 'sawtooth', vol: 0.11 });
+    else sfxTone({ freq: 760, freqEnd: 500, dur: 0.055, type: 'square', vol: 0.12 });
+  }
+  function sfxReload() { sfxTone({ freq: 340, freqEnd: 220, dur: 0.28, type: 'triangle', vol: 0.12 }); }
+  let lastHitSfxAt = -Infinity;
+  function sfxEnemyHit(isCrit) {
+    const now = performance.now();
+    if (now - lastHitSfxAt < 35) return; // avoid a wall of noise from pierce/spread hitting several enemies at once
+    lastHitSfxAt = now;
+    if (isCrit) sfxTone({ freq: 1500, freqEnd: 2200, dur: 0.08, type: 'triangle', vol: 0.14 });
+    else sfxNoise({ dur: 0.05, vol: 0.10, freq: 2600, q: 0.8 });
+  }
+  function sfxEnemyKill() { sfxNoise({ dur: 0.16, vol: 0.16, freq: 900, type: 'lowpass', q: 0.6 }); }
+  let lastPlayerHitSfxAt = -Infinity;
+  function sfxPlayerHit() {
+    const now = performance.now();
+    if (now - lastPlayerHitSfxAt < 150) return; // matches flashHit's own throttle
+    lastPlayerHitSfxAt = now;
+    sfxNoise({ dur: 0.18, vol: 0.22, freq: 300, type: 'lowpass', q: 0.7 });
+  }
+  function sfxShieldBlock() { sfxTone({ freq: 700, freqEnd: 1100, dur: 0.12, type: 'sine', vol: 0.16 }); }
+  let lastExpSfxAt = -Infinity;
+  function sfxPickup(kind) {
+    if (kind === 'hp') sfxTone({ freq: 500, freqEnd: 900, dur: 0.14, type: 'sine', vol: 0.14 });
+    else if (kind === 'core') { sfxTone({ freq: 500, freqEnd: 1400, dur: 0.18, type: 'square', vol: 0.14 }); sfxTone({ freq: 900, freqEnd: 1800, dur: 0.18, type: 'square', vol: 0.1, delay: 0.05 }); }
+    else {
+      const now = performance.now();
+      if (now - lastExpSfxAt < 40) return; // a magnet pull can vacuum up a dozen orbs in one frame — don't spam blips
+      lastExpSfxAt = now;
+      sfxTone({ freq: 900, freqEnd: 1300, dur: 0.05, type: 'sine', vol: 0.06 });
+    }
+  }
+  function sfxLevelUp() {
+    [0, 0.07, 0.14].forEach((d, i) => sfxTone({ freq: 520 + i * 220, dur: 0.16, type: 'triangle', vol: 0.16, delay: d }));
+  }
+  function sfxBossBanner() {
+    sfxTone({ freq: 160, freqEnd: 60, dur: 0.9, type: 'sawtooth', vol: 0.2 });
+    sfxTone({ freq: 220, freqEnd: 80, dur: 0.9, type: 'square', vol: 0.1, delay: 0.05 });
+  }
+  function sfxHighScore() {
+    [0, 0.09, 0.18, 0.27].forEach((d, i) => sfxTone({ freq: 660 + i * 165, dur: 0.22, type: 'triangle', vol: 0.18, delay: d }));
+  }
+  function sfxGameOver() {
+    [0, 0.12].forEach((d, i) => sfxTone({ freq: 260 - i * 90, freqEnd: 120 - i * 40, dur: 0.4, type: 'sawtooth', vol: 0.14, delay: d }));
+  }
+  function sfxUiClick() { sfxTone({ freq: 520, dur: 0.05, type: 'square', vol: 0.08 }); }
+
+  // Laser is a continuous beam, so it gets a held drone that starts/stops with firing rather
+  // than a one-shot — a slow LFO on pitch gives it a bit of buzz instead of a flat sine.
+  let laserOsc = null, laserLfo = null, laserGain = null;
+  function laserSfxStart() {
+    if (!prefs.sound || !ensureAudio() || laserOsc) return;
+    if (actx.state === 'suspended') actx.resume().catch(() => {});
+    const t0 = actx.currentTime;
+    laserOsc = actx.createOscillator();
+    laserOsc.type = 'sawtooth';
+    laserOsc.frequency.value = 180;
+    laserLfo = actx.createOscillator();
+    laserLfo.frequency.value = 14;
+    const lfoGain = actx.createGain();
+    lfoGain.gain.value = 18;
+    laserLfo.connect(lfoGain); lfoGain.connect(laserOsc.frequency);
+    const filter = actx.createBiquadFilter();
+    filter.type = 'lowpass'; filter.frequency.value = 1200;
+    laserGain = actx.createGain();
+    laserGain.gain.setValueAtTime(0.0001, t0);
+    laserGain.gain.linearRampToValueAtTime(0.11, t0 + 0.05);
+    laserOsc.connect(filter); filter.connect(laserGain); laserGain.connect(masterGain);
+    laserOsc.start(t0); laserLfo.start(t0);
+  }
+  function laserSfxStop() {
+    if (!laserOsc) return;
+    const t0 = actx.currentTime;
+    laserGain.gain.cancelScheduledValues(t0);
+    laserGain.gain.setValueAtTime(laserGain.gain.value, t0);
+    laserGain.gain.linearRampToValueAtTime(0.0001, t0 + 0.08);
+    laserOsc.stop(t0 + 0.1); laserLfo.stop(t0 + 0.1);
+    laserOsc = null; laserLfo = null; laserGain = null;
+  }
+
+  let VW = window.innerWidth, VH = window.innerHeight; // viewport (screen) size
+  // Game-world "vision": on a big PC window the player naturally sees more of the
+  // world than on a small phone screen, since the camera always shows exactly
+  // VW x VH world units. `zoom` compensates for that — on narrower screens we zoom
+  // the camera out so the visible world area (VVW x VVH) approaches what a normal
+  // desktop window would show, instead of shrinking with the screen.
+  let zoom = 1, VVW = VW, VVH = VH;
+  const ZOOM_REF_W = 1100;   // screen width at/above which vision matches "PC" (zoom stays 1)
+  const ZOOM_MIN = 0.25;     // don't zoom out past this even on tiny phones
+  // ── CANVAS / VIEWPORT — sizing, DPR, camera zoom ──
+  function resize() {
+    // visualViewport reflects the actual visible area on mobile (accounts for browser
+    // chrome / on-screen keyboard) more reliably than innerWidth/innerHeight alone.
+    const vv = window.visualViewport;
+    VW = Math.round(vv ? vv.width : window.innerWidth);
+    VH = Math.round(vv ? vv.height : window.innerHeight);
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = VW * dpr; canvas.height = VH * dpr;
+    canvas.style.width = VW + 'px'; canvas.style.height = VH + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    zoom = Math.max(ZOOM_MIN, Math.min(1, VW / ZOOM_REF_W));
+    VVW = VW / zoom; VVH = VH / zoom; // visible world-space size at current zoom
+  }
+  window.addEventListener('resize', resize);
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', resize);
+  // On mobile, innerWidth/innerHeight (and visualViewport) can report stale values for a
+  // moment right after a rotation, so re-run resize a couple times as it settles.
+  window.addEventListener('orientationchange', () => {
+    resize();
+    setTimeout(resize, 120);
+    setTimeout(resize, 400);
+  });
+  resize();
+
+  // ── FULLSCREEN + ORIENTATION LOCK — best effort, must run from a user gesture ──
+  // Wrapped defensively: on some mobile/in-app browsers these APIs throw synchronously
+  // instead of rejecting a promise (against spec), which would otherwise abort the click
+  // handler and silently block startGame()/continueGame() from ever running.
+  function enterImmersiveMode() {
+    try {
+      const el = document.documentElement;
+      const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+      const doLockOrientation = () => {
+        try {
+          if (screen.orientation && screen.orientation.lock) {
+            const p = screen.orientation.lock('landscape');
+            if (p && p.catch) p.catch(() => {});
+          }
+        } catch (e) { /* orientation lock unsupported/blocked here — ignore */ }
+      };
+      if (req && !document.fullscreenElement && !document.webkitFullscreenElement) {
+        try {
+          const result = req.call(el);
+          if (result && result.then) result.then(doLockOrientation).catch(() => {});
+          else doLockOrientation();
+        } catch (e) { /* fullscreen not permitted here (e.g. iOS Safari) — ignore */ }
+      } else {
+        doLockOrientation();
+      }
+      setTimeout(resize, 150);
+    } catch (e) { /* never let this block the caller from starting the game */ }
+  }
+  document.addEventListener('fullscreenchange', resize);
+  document.addEventListener('webkitfullscreenchange', resize);
+  // Fullscreen + orientation lock both require a user gesture, so the menu can't be
+  // forced sideways before any touch happens — but we don't need to wait specifically
+  // for the Start button either. Flip to landscape on the very first tap/click anywhere
+  // on the page, so the menu itself goes sideways immediately instead of staying
+  // portrait until Start is pressed.
+  document.addEventListener('pointerdown', enterImmersiveMode, { once: true, capture: true });
+
+  const WORLD_W = CONFIG.world.w, WORLD_H = CONFIG.world.h;
+
+  // ── MATH & OBSTACLE UTILS — distance, obstacle shape gen, collision push-out ──
+  function dist(ax, ay, bx, by) { const dx = ax - bx, dy = ay - by; return Math.sqrt(dx * dx + dy * dy); }
+  const rand = Math.random;
+
+  const STAR_COUNT = 160;
+  const stars = [];
+  for (let i = 0; i < STAR_COUNT; i++) {
+    stars.push({
+      x: rand() * WORLD_W, y: rand() * WORLD_H,
+      r: rand() * 1.4 + 0.4, baseAlpha: rand() * 0.5 + 0.15,
+      twinkleFreq: rand() * 2 + 0.5, twinklePhase: rand() * Math.PI * 2,
+    });
+  }
+
+  // Slow far-away star layer for a bit of depth (drawn with a fraction of the camera offset).
+  const FAR_STAR_COUNT = 90;
+  const farStars = [];
+  for (let i = 0; i < FAR_STAR_COUNT; i++) {
+    farStars.push({
+      x: rand() * WORLD_W, y: rand() * WORLD_H,
+      r: rand() * 1.1 + 0.3, baseAlpha: rand() * 0.3 + 0.08,
+    });
+  }
+
+  // Soft colored nebula clouds drifting behind everything, for atmosphere.
+  const NEBULA_COUNT = 7;
+  const nebulae = [];
+  const nebulaPalette = ['#4fd8e0', '#ff5fd6', '#c65fff', '#ffd166'];
+  for (let i = 0; i < NEBULA_COUNT; i++) {
+    nebulae.push({
+      x: rand() * WORLD_W, y: rand() * WORLD_H,
+      r: rand() * 260 + 220,
+      color: nebulaPalette[i % nebulaPalette.length],
+      alpha: rand() * 0.10 + 0.06,
+      driftX: (rand() - 0.5) * 3, driftY: (rand() - 0.5) * 3,
+      phase: rand() * Math.PI * 2,
+    });
+  }
+
+  // Obstacles: solid crystal/wreckage clusters that block movement, bullets, and enemies.
+  let obstacles = [];
+  function makeObstaclePoints(r) {
+    const n = 6 + Math.floor(rand() * 3);
+    const pts = [];
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2;
+      const jr = r * (0.72 + rand() * 0.42);
+      pts.push([Math.cos(a) * jr, Math.sin(a) * jr]);
+    }
+    return pts;
+  }
+  function generateObstacles() {
+    const cfg = CONFIG.obstacles;
+    const cx = WORLD_W / 2, cy = WORLD_H / 2;
+    const list = [];
+
+    // Lay out a grid of cells covering the world, sized so there are noticeably
+    // more cells than obstacles we need — then shuffle and jitter within each
+    // chosen cell. This spreads obstacles evenly across the whole map instead
+    // of letting pure random placement clump in some areas and leave others empty.
+    const targetCells = Math.ceil(cfg.count * 1.8);
+    const aspect = WORLD_W / WORLD_H;
+    let cols = Math.max(1, Math.round(Math.sqrt(targetCells * aspect)));
+    let rows = Math.max(1, Math.round(targetCells / cols));
+    const cellW = WORLD_W / cols, cellH = WORLD_H / rows;
+
+    const cells = [];
+    for (let cy_i = 0; cy_i < rows; cy_i++) {
+      for (let cx_i = 0; cx_i < cols; cx_i++) {
+        cells.push({ cx: cx_i, cy: cy_i });
+      }
+    }
+    // shuffle
+    for (let i = cells.length - 1; i > 0; i--) {
+      const j = Math.floor(rand() * (i + 1));
+      [cells[i], cells[j]] = [cells[j], cells[i]];
+    }
+
+    for (const cell of cells) {
+      if (list.length >= cfg.count) break;
+      const r = cfg.minR + rand() * (cfg.maxR - cfg.minR);
+      const pad = Math.min(cellW, cellH) * 0.18;
+      const x = cell.cx * cellW + pad + rand() * (cellW - pad * 2);
+      const y = cell.cy * cellH + pad + rand() * (cellH - pad * 2);
+      if (x - r < 30 || x + r > WORLD_W - 30 || y - r < 30 || y + r > WORLD_H - 30) continue;
+      if (dist(x, y, cx, cy) < cfg.minSpawnDist + r) continue;
+      let ok = true;
+      for (const o of list) {
+        if (dist(x, y, o.x, o.y) < o.r + r + cfg.minGap) { ok = false; break; }
+      }
+      if (!ok) continue;
+      list.push({
+        x, y, r,
+        rot: rand() * Math.PI * 2,
+        color: cfg.colors[Math.floor(rand() * cfg.colors.length)],
+        points: makeObstaclePoints(r),
+      });
+    }
+    obstacles = list;
+  }
+  function resolveObstaclePush(entity) {
+    for (const ob of obstacles) {
+      const dx = entity.x - ob.x, dy = entity.y - ob.y;
+      const d = Math.sqrt(dx * dx + dy * dy) || 0.0001;
+      const minD = entity.r + ob.r;
+      if (d < minD) {
+        const push = minD - d;
+        entity.x += (dx / d) * push;
+        entity.y += (dy / d) * push;
+      }
+    }
+  }
+
+  let lastHitFlashAt = -Infinity;
+  // ── SCREEN FX HELPERS — hit flash, shockwave rings ──
+  function flashHit(now) {
+    if (now - lastHitFlashAt < 150) return; // throttle so rapid/continuous damage doesn't spam the transition
+    lastHitFlashAt = now;
+    sfxPlayerHit();
+    hitFlashEl.style.transition = 'none';
+    hitFlashEl.style.background = 'rgba(255,40,40,0.28)';
+    requestAnimationFrame(() => {
+      hitFlashEl.style.transition = 'background .3s ease';
+      hitFlashEl.style.background = 'rgba(255,40,40,0)';
+    });
+  }
+
+  function addShockwave(x, y, maxR, color) {
+    shockwaves.push({ x, y, r: 6, maxR, alpha: 0.9, color });
+  }
+
+  // ── PLAYER — leveling curve, player factory, shield-stack sync ──
+  function expForLevel(level) {
+    const L = CONFIG.leveling;
+    return Math.round(L.base + (level - 1) * L.perLevel + (level - 1) * (level - 1) * L.quad);
+  }
+
+  function makePlayer(charId) {
+    const p = CONFIG.player;
+    const c = CHARACTERS[charId] || CHARACTERS.square;
+    const m = c.mods || {};
+    const maxHp = Math.max(10, p.hp + (m.hpBonus || 0));
+    const magazineSize = Math.max(3, p.magazineSize + (m.magazineBonus || 0));
+    return {
+      x: WORLD_W / 2, y: WORLD_H / 2, r: p.r, hp: maxHp, maxHp: maxHp, speed: p.speed * (m.speedMult || 1),
+      angle: 0,
+      fireRate: p.fireRate * (m.fireRateMult || 1), baseFireRate: p.fireRate * (m.fireRateMult || 1),
+      weapon: c.innateWeapon || 'basic', defaultWeapon: c.innateWeapon || 'basic', weaponTimerMs: 0,
+      laserActive: false, laserEndX: 0, laserEndY: 0, laserSegments: [],
+      laserHeat: CONFIG.weapons.laser.maxHeat, laserOverheated: false, // beam heat limit — PRISM only
+      laserHeatDrainMult: 1, laserHeatRegenMult: 1, // Coolant Injector skill hooks
+      overdriveUntil: 0, // Overdrive Core pickup: temporary fire-rate buff + beam overheat immunity
+
+      magazineSize: magazineSize, magCurrent: magazineSize,
+      reloadMs: p.reloadMs, reloading: false, reloadEndAt: 0,
+
+      level: 1, exp: 0, expToNext: expForLevel(1),
+
+      extraBullets: 0, bounceCount: 0, pierceCount: 0, magnetRadius: m.magnetRadius || 0,
+      bulletSpeedMult: 1, bulletSizeMult: 1, bulletDamageMult: 1 * (m.bulletDamageMult || 1),
+      bulletRangeBonus: m.bulletRangeBonus || 0,
+      laserWidthMult: 1, laserDpsMult: 1, laserLifestealPct: 0, // PRISM-only beam skills; harmless defaults for bullet users
+      critChance: m.critChance || 0, lifeSteal: m.lifeSteal || 0,
+      thornDamage: m.thornDamage || 0, thornRadius: m.thornRadius || 0, thornBaseRadius: m.thornRadius || 150,
+      dmgReduction: m.dmgReduction || 0,
+      explosiveChance: 0, knockback: 0,
+      shieldMax: 0, shieldCharges: 0, shieldStacksApplied: 0, shieldInvulnUntil: 0,
+      skillChoiceCount: 3 + (m.skillChoiceBonus || 0),
+      levelUpCount: 0,
+      flashUntil: 0,
+      skills: {},
+      character: c.id, shape: c.shape, color: getSkinColor(c.id),
+    };
+  }
+
+  // Shield Generator stacks are non-rechargeable: a stack grants a passive buff while it's
+  // still "charged", and both the absorb-hit and the buff go away together once it's spent.
+  // This reconciles player.speed / bulletDamageMult / fireRate whenever the active stack
+  // count changes (gaining a stack from the skill, or losing one by absorbing a hit).
+  function syncShieldStacks(p, newStacks) {
+    const sc = CONFIG.player;
+    const oldStacks = p.shieldStacksApplied || 0;
+    newStacks = Math.max(0, Math.min(sc.shieldMaxStacks, newStacks));
+    if (newStacks === oldStacks) return;
+    const oldSpeedMult = 1 + sc.shieldSpeedPerStack * oldStacks;
+    const newSpeedMult = 1 + sc.shieldSpeedPerStack * newStacks;
+    p.speed = p.speed / oldSpeedMult * newSpeedMult;
+
+    const oldDmgMult = 1 + sc.shieldDmgPerStack * oldStacks;
+    const newDmgMult = 1 + sc.shieldDmgPerStack * newStacks;
+    p.bulletDamageMult = (p.bulletDamageMult || 1) / oldDmgMult * newDmgMult;
+
+    const oldAtkMult = 1 + sc.shieldAtkSpeedPerStack * oldStacks;
+    const newAtkMult = 1 + sc.shieldAtkSpeedPerStack * newStacks;
+    p.baseFireRate = p.baseFireRate * oldAtkMult / newAtkMult;
+    p.fireRate = p.fireRate * oldAtkMult / newAtkMult;
+
+    p.shieldStacksApplied = newStacks;
+  }
+
+  let player = makePlayer(selectedCharacter);
+  let bullets = [], enemies = [], particles = [], orbs = [], shockwaves = [], enemyBullets = [];
+  let playerTrail = []; // light-cycle style ribbon: recent {x,y,t} points behind the player
+  const TRAIL_LIFE_MS = 320; // how long a trail segment lingers before fully fading out
+  let wave = 1, score = 0, combo = 1, comboTimer = 0, shake = 0;
+  let bossActive = false, bossBannerUntil = 0;
+  let lastShot = -Infinity, lastFrame = performance.now();
+  let phase = 'start'; // 'start' | 'playing' | 'paused' | 'levelup' | 'over'
+  let pendingSpawns = [];
+
+  const SAVE_KEY = 'neonBreach.save.v1';
+  // ── CHECKPOINT / SAVE SYSTEM — mid-run save/load/clear to localStorage ──
+  function saveCheckpoint() {
+    try {
+      localStorage.setItem(SAVE_KEY, JSON.stringify({ player, wave, score, combo, obstacles }));
+    } catch (e) { /* storage unavailable — continue just won't be offered */ }
+  }
+  function loadCheckpoint() {
+    try {
+      const raw = localStorage.getItem(SAVE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) { return null; }
+  }
+  function clearCheckpoint() {
+    try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
+  }
+  function hasSave() { return !!loadCheckpoint(); }
+
+  // ── HIGH SCORE — persisted best score + a one-time-per-run celebration on beating it ──
+  const HIGHSCORE_KEY = 'neonBreach.highscore.v1';
+  function loadHighScore() {
+    try { return Number(localStorage.getItem(HIGHSCORE_KEY)) || 0; } catch (e) { return 0; }
+  }
+  function saveHighScore(v) {
+    try { localStorage.setItem(HIGHSCORE_KEY, String(Math.floor(v))); } catch (e) { /* storage unavailable */ }
+  }
+  let highScore = loadHighScore();
+  let recordBrokenThisRun = false; // only celebrate once per run, the moment the old best is passed
+  let recordBannerHideAt = 0;
+
+  function triggerHighScoreCelebration(now, newScore) {
+    recordBannerSubEl.textContent = `${Math.floor(newScore)} PTS`;
+    recordBannerEl.classList.add('active');
+    recordBannerHideAt = now + 2600;
+    addRainbowParticles(player.x, player.y, 46, 8);
+    addGlitterParticles(player.x, player.y, 32);
+    addShockwave(player.x, player.y, 160, '#ffd166');
+    addShockwave(player.x, player.y, 100, '#fff2cf');
+    shake = Math.min(shake + CONFIG.shake.onKillCap, CONFIG.shake.onKillCap * 1.6);
+    sfxHighScore();
+  }
+
+  const keys = {};
+  window.addEventListener('keydown', e => { keys[e.code] = true; if (e.code === 'Space') e.preventDefault(); });
+  window.addEventListener('keyup', e => { keys[e.code] = false; });
+  // ── INPUT — keyboard, virtual joysticks (touch), camera follow ──
+  function keyDown(...codes) { return codes.some(c => keys[c]); }
+
+  let mouse = { x: VW / 2, y: VH / 2, active: false };
+  let mouseDown = false;
+  canvas.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; mouse.active = true; });
+  canvas.addEventListener('mousedown', e => { if (e.button === 0) mouseDown = true; });
+  window.addEventListener('mouseup', e => { if (e.button === 0) mouseDown = false; });
+
+  function makeStick(zoneEl, knobEl, deadzonePx, fireThreshold, stickMaxR) {
+    const state = { active: false, dx: 0, dy: 0, mag: 0, pointerId: null };
+    let originX = 0, originY = 0;
+    const maxR = stickMaxR || 44;
+    const setKnob = (dx, dy) => { knobEl.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`; };
+
+    function start(e) {
+      const rect = zoneEl.getBoundingClientRect();
+      originX = rect.left + rect.width / 2; originY = rect.top + rect.height / 2;
+      state.active = true; state.pointerId = e.pointerId;
+      move(e);
+      zoneEl.setPointerCapture && zoneEl.setPointerCapture(e.pointerId);
+    }
+    function move(e) {
+      if (!state.active || e.pointerId !== state.pointerId) return;
+      const dx = e.clientX - originX, dy = e.clientY - originY;
+      const d = Math.sqrt(dx * dx + dy * dy);
+      const ang = Math.atan2(dy, dx);
+      setKnob(Math.cos(ang) * Math.min(d, maxR), Math.sin(ang) * Math.min(d, maxR));
+      if (d < deadzonePx) { state.dx = 0; state.dy = 0; state.mag = 0; }
+      else { state.dx = Math.cos(ang); state.dy = Math.sin(ang); state.mag = Math.min(d / maxR, 1); }
+      // Visual cue for sticks that double as a fire trigger (see aimStick below): once the
+      // push crosses fireThreshold the knob lights up pink so it's clear a light aim-only
+      // nudge has turned into an actual "firing" push.
+      if (fireThreshold != null) knobEl.classList.toggle('firing', state.mag > fireThreshold);
+    }
+    function end(e) {
+      if (e.pointerId !== state.pointerId) return;
+      state.active = false; state.dx = 0; state.dy = 0; state.mag = 0; state.pointerId = null;
+      setKnob(0, 0);
+      if (fireThreshold != null) knobEl.classList.remove('firing');
+    }
+    zoneEl.addEventListener('pointerdown', start);
+    zoneEl.addEventListener('pointermove', move);
+    zoneEl.addEventListener('pointerup', end);
+    zoneEl.addEventListener('pointercancel', end);
+    zoneEl.addEventListener('pointerleave', e => { if (state.pointerId === e.pointerId) end(e); });
+    return state;
+  }
+  const moveStick = makeStick(document.getElementById('moveZone'), document.getElementById('moveKnob'), 8);
+  const aimStick = makeStick(document.getElementById('aimZone'), document.getElementById('aimKnob'), 6, 0.6, 54);
+
+  const cam = { x: 0, y: 0 };
+  function updateCamera() {
+    cam.x = Math.max(0, Math.min(WORLD_W - VVW, player.x - VVW / 2));
+    cam.y = Math.max(0, Math.min(WORLD_H - VVH, player.y - VVH / 2));
+    if (WORLD_W < VVW) cam.x = -(VVW - WORLD_W) / 2;
+    if (WORLD_H < VVH) cam.y = -(VVH - WORLD_H) / 2;
+  }
+
+  // ── SKINS — cosmetic recolors per character, persisted separately from prefs ──
+  const SKIN_KEY = 'neonBreach.skins.v1';
+  function loadSelectedSkins() {
+    try {
+      const raw = localStorage.getItem(SKIN_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch (e) { return {}; }
+  }
+  function saveSelectedSkins() {
+    try { localStorage.setItem(SKIN_KEY, JSON.stringify(selectedSkins)); } catch (e) { /* ignore */ }
+  }
+  selectedSkins = loadSelectedSkins();
+  function getSkin(charId) {
+    const list = SKINS[charId] || [];
+    const wantId = selectedSkins[charId] || 'classic';
+    return list.find(s => s.id === wantId) || list[0];
+  }
+  function getSkinColor(charId) {
+    const skin = getSkin(charId);
+    return skin ? skin.color : (CHARACTERS[charId] || CHARACTERS.square).color;
+  }
+
+  // ── CHARACTER SELECT UI — icon svg + card builder ──
+  function charIconSvg(shape, color) {
+    if (shape === 'square') return `<svg viewBox="0 0 44 44"><rect x="8" y="8" width="28" height="28" fill="${color}"/></svg>`;
+    if (shape === 'triangle') return `<svg viewBox="0 0 44 44"><polygon points="36,22 8,10 15,22 8,34" fill="${color}"/></svg>`;
+    if (shape === 'diamond') return `<svg viewBox="0 0 44 44"><polygon points="38,22 22,6 6,22 22,38" fill="${color}"/></svg>`;
+    return `<svg viewBox="0 0 44 44"><circle cx="22" cy="22" r="15" fill="${color}"/></svg>`;
+  }
+  function buildCharSelect() {
+    charCardsEl.innerHTML = '';
+    Object.values(CHARACTERS).forEach(c => {
+      const skinColor = getSkinColor(c.id);
+      const card = document.createElement('div');
+      card.className = 'char-card' + (c.id === selectedCharacter ? ' selected' : '');
+      card.style.color = skinColor;
+      card.innerHTML = `<div class="char-icon">${charIconSvg(c.shape, skinColor)}</div>
+        <div class="char-name" style="color:${skinColor}">${c.name}</div>
+        <div class="char-desc">${c.desc}</div>`;
+      card.addEventListener('click', () => {
+        selectedCharacter = c.id;
+        charCardsEl.querySelectorAll('.char-card').forEach(el => el.classList.remove('selected'));
+        card.classList.add('selected');
+        buildSkinSwatches();
+        sfxUiClick();
+      });
+      charCardsEl.appendChild(card);
+    });
+  }
+  function buildSkinSwatches() {
+    skinSwatchesEl.innerHTML = '';
+    const list = SKINS[selectedCharacter] || [];
+    const current = getSkin(selectedCharacter);
+    list.forEach(skin => {
+      const sw = document.createElement('div');
+      sw.className = 'skin-swatch' + (current && skin.id === current.id ? ' selected' : '');
+      sw.style.background = skin.color;
+      sw.style.color = skin.color;
+      sw.title = skin.name;
+      sw.addEventListener('click', () => {
+        selectedSkins[selectedCharacter] = skin.id;
+        saveSelectedSkins();
+        buildSkinSwatches();
+        buildCharSelect();
+        sfxUiClick();
+      });
+      skinSwatchesEl.appendChild(sw);
+    });
+  }
+  buildCharSelect();
+  buildSkinSwatches();
+
+  // ── GAME FLOW — menu/start/continue/pause/resume/quit, overlay show/hide, run reset ──
+  function showStartOverlay() {
+    titleEl.textContent = 'NEON BREACH';
+    titleEl.classList.remove('over');
+    statsEl.textContent = highScore > 0 ? `Best Score: ${Math.floor(highScore)}` : '';
+    const save = loadCheckpoint();
+    if (save) {
+      startBtn.textContent = 'NEW GAME';
+      continueBtn.textContent = `CONTINUE — Wave ${save.wave}, LV ${save.player.level}`;
+      continueBtn.classList.remove('hidden');
+    } else {
+      startBtn.textContent = 'START';
+      continueBtn.classList.add('hidden');
+    }
+    overlay.classList.remove('hidden');
+    levelupOverlay.classList.add('hidden');
+    hud.classList.add('hidden');
+    controls.classList.add('hidden');
+  }
+  function showGameOverOverlay() {
+    titleEl.textContent = 'RUN OVER';
+    titleEl.classList.add('over');
+    sfxGameOver();
+    const beat = recordBrokenThisRun ? '      NEW BEST!' : `      Best: ${Math.floor(highScore)}`;
+    statsEl.textContent = `Score: ${Math.floor(score)}      Reached Wave ${wave}      Level ${player.level}${beat}`;
+    startBtn.textContent = 'NEW GAME';
+    continueBtn.classList.add('hidden');
+    overlay.classList.remove('hidden');
+    levelupOverlay.classList.add('hidden');
+    vignetteEl.classList.remove('active');
+    recordBannerEl.classList.remove('active');
+    recordBannerHideAt = 0;
+  }
+  function hideOverlay() {
+    overlay.classList.add('hidden');
+    hud.classList.remove('hidden');
+    controls.classList.remove('hidden');
+  }
+  startBtn.addEventListener('click', () => { sfxUiClick(); try { enterImmersiveMode(); } catch (e) {} clearCheckpoint(); startGame(); });
+  continueBtn.addEventListener('click', () => { sfxUiClick(); try { enterImmersiveMode(); } catch (e) {} continueGame(); });
+
+  function resetRunState() {
+    bullets = []; enemies = []; particles = []; orbs = []; shockwaves = []; enemyBullets = []; playerTrail = [];
+    comboTimer = 0; shake = 0;
+    bossActive = false;
+    lastShot = -Infinity;
+    recordBrokenThisRun = score > highScore; // e.g. resuming a save that already cleared the old best
+    recordBannerHideAt = 0;
+    recordBannerEl.classList.remove('active');
+    pendingSpawns.forEach(p => clearTimeout(p.id));
+    pendingSpawns = [];
+    phase = 'playing';
+    levelupOverlay.classList.add('hidden');
+    vignetteEl.classList.remove('active');
+    hitFlashEl.style.transition = 'none';
+    hitFlashEl.style.background = 'rgba(255,40,40,0)';
+    hideOverlay();
+  }
+
+  function startGame() {
+    player = makePlayer(selectedCharacter);
+    wave = 1; score = 0; combo = 1;
+    firstLevelSkillIds = new Set();
+    generateObstacles();
+    resetRunState();
+    spawnWave();
+  }
+
+  function continueGame() {
+    const save = loadCheckpoint();
+    if (!save) { startGame(); return; }
+    player = save.player;
+    wave = save.wave; score = save.score; combo = save.combo || 1;
+    player.reloading = false;
+    player.magCurrent = player.magazineSize;
+    player.shieldInvulnUntil = 0;
+    // Backfill fields added after this save might have been written — an older save won't
+    // have the beam heat system, and NaN/undefined here would silently disable the limit
+    // (NaN <= 0 is always false) and show "BEAM NaN%" in the HUD.
+    if (typeof player.laserHeat !== 'number' || Number.isNaN(player.laserHeat)) player.laserHeat = CONFIG.weapons.laser.maxHeat;
+    if (typeof player.laserOverheated !== 'boolean') player.laserOverheated = false;
+    if (typeof player.laserHeatDrainMult !== 'number') player.laserHeatDrainMult = 1;
+    if (typeof player.laserHeatRegenMult !== 'number') player.laserHeatRegenMult = 1;
+    if (typeof player.overdriveUntil !== 'number') player.overdriveUntil = 0;
+    firstLevelSkillIds = new Set(Object.keys(player.skills || {}));
+    obstacles = (save.obstacles && save.obstacles.length) ? save.obstacles : (generateObstacles(), obstacles);
+    resetRunState();
+    spawnWave();
+  }
+
+  function pauseGame() {
+    if (phase !== 'playing') return;
+    phase = 'paused';
+    laserSfxStop();
+    setFireBtnDown(false);
+    saveCheckpoint();
+    pauseStats.textContent = `Score: ${Math.floor(score)}      Wave ${wave}      Level ${player.level}`;
+    pauseOverlay.classList.remove('hidden');
+    controls.classList.add('hidden');
+    sfxUiClick();
+  }
+  function resumeGame() {
+    if (phase !== 'paused') return;
+    phase = 'playing';
+    pauseOverlay.classList.add('hidden');
+    controls.classList.remove('hidden');
+    sfxUiClick();
+  }
+  function quitToMenu() {
+    phase = 'start';
+    laserSfxStop();
+    pauseOverlay.classList.add('hidden');
+    pendingSpawns.forEach(p => clearTimeout(p.id));
+    pendingSpawns = [];
+    showStartOverlay();
+    sfxUiClick();
+  }
+  pauseBtn.addEventListener('click', pauseGame);
+  resumeBtn.addEventListener('click', () => { try { enterImmersiveMode(); } catch (e) {} resumeGame(); });
+  quitBtn.addEventListener('click', quitToMenu);
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Escape' || e.code === 'KeyP') {
+      if (phase === 'playing') pauseGame();
+      else if (phase === 'paused') resumeGame();
+    }
+  });
+
+  // Skills flagged magOnly do nothing for a continuous-beam weapon (no discrete bullets, no
+  // magazine/reload) — skills flagged laserOnly are the reverse, meaningless without a beam.
+  // offerSkillChoices() excludes whichever doesn't apply based on the character's innate
+  // weapon (currently only PRISM uses 'laser'), so level-ups never offer a dead pick either way.
+  const SKILL_POOL = [
+    { id: 'firerate',  name: 'Fire Rate Increase',       desc: '+15% attack speed', magOnly: true,
+      apply(p) { p.baseFireRate = Math.max(35, p.baseFireRate / 1.15); if (p.weapon === 'basic') p.fireRate = p.baseFireRate; } },
+    { id: 'doublebullet', name: 'Double Bullet',         desc: 'Fires an extra secondary bullet on shot', magOnly: true,
+      apply(p) { p.extraBullets = (p.extraBullets || 0) + 1; } },
+    { id: 'bounce',    name: 'Bullet Bounce',            desc: 'Bullets ricochet off boundaries/obstacles once per stack (a ricochet hit has a chance to refund a mag round). PRISM: the beam itself reflects once per stack instead',
+      apply(p) { p.bounceCount = (p.bounceCount || 0) + 1; } },
+    { id: 'hp',        name: 'HP Increase',              desc: '+25 Max HP and heals 25 HP',
+      apply(p) { p.maxHp += 25; p.hp = Math.min(p.maxHp, p.hp + 25); } },
+    { id: 'movespeed', name: 'Movement Speed Increase',  desc: '+15% movement speed',
+      apply(p) { p.speed *= 1.15; } },
+    { id: 'bulletspeed', name: 'Bullet Speed Increase',  desc: '+20% projectile speed', magOnly: true,
+      apply(p) { p.bulletSpeedMult = (p.bulletSpeedMult || 1) * 1.2; } },
+    { id: 'pierce',    name: 'Piercing Rounds',          desc: 'Bullets pass through 1 extra enemy before destroying', magOnly: true,
+      apply(p) { p.pierceCount = (p.pierceCount || 0) + 1; } },
+    { id: 'magnet',    name: 'Magnet Radius',            desc: 'Automatically pulls power-up orbs from further away',
+      apply(p) { p.magnetRadius = (p.magnetRadius || 0) + 140; } },
+    { id: 'crit',      name: 'Critical Strike Chance',   desc: '15% chance to deal 2.5x damage on hit',
+      apply(p) { p.critChance = Math.min(1, (p.critChance || 0) + 0.15); } },
+    { id: 'lifesteal', name: 'Life Steal',                desc: 'Heals 1 HP on every enemy kill',
+      apply(p) { p.lifeSteal = (p.lifeSteal || 0) + 1; } },
+    { id: 'thorn',     name: 'Thorn Aura',                desc: 'Damages nearby enemies in a radius around the player (damage stacks, radius doesn\'t)',
+      apply(p) { p.thornDamage = (p.thornDamage || 0) + 6; p.thornRadius = (p.thornBaseRadius || 150) + (p.thornRadiusBonus || 0); } },
+    { id: 'explosive', name: 'Explosive Impact',          desc: '10% chance for bullets to create a small AOE blast on hit', magOnly: true,
+      apply(p) { p.explosiveChance = Math.min(1, (p.explosiveChance || 0) + 0.10); } },
+    { id: 'giant',     name: 'Giant Bullets',             desc: '+50% projectile size and +20% damage', magOnly: true,
+      apply(p) { p.bulletSizeMult = (p.bulletSizeMult || 1) * 1.5; p.bulletDamageMult = (p.bulletDamageMult || 1) * 1.2; } },
+    { id: 'overcharge', name: 'Overcharge',               desc: 'Enemies are knocked back when hit by bullets, or continuously while held in the beam',
+      apply(p) { p.knockback = (p.knockback || 0) + 3; } },
+    { id: 'shield',    name: 'Shield Generator',          desc: 'Grants a stacked shield charge that absorbs 1 hit (does not recharge). While a stack is still charged: +20% move speed, +20% damage, +5% attack speed per stack (max 5 stacks)', maxStacks: 5,
+      apply(p) { p.shieldMax = Math.min(CONFIG.player.shieldMaxStacks, (p.shieldMax || 0) + 1); p.shieldCharges = Math.min(p.shieldMax, (p.shieldCharges || 0) + 1); syncShieldStacks(p, p.shieldCharges); } },
+    { id: 'reloadspeed', name: 'Reload Speed',            desc: '-20% reload time', magOnly: true,
+      apply(p) { p.reloadMs = Math.max(CONFIG.player.reloadMinMs, Math.round(p.reloadMs * 0.8)); } },
+    { id: 'magsize',   name: 'Extended Magazine',         desc: '+5 magazine capacity', magOnly: true,
+      apply(p) { p.magazineSize += 5; p.magCurrent = Math.min(p.magazineSize, p.magCurrent + 5); } },
+    { id: 'regen',     name: 'Nanite Regeneration',        desc: `Regenerates ${CONFIG.player.regenHpPerSecPerStack} HP/sec after ${CONFIG.player.regenDelayMs / 1000}s without taking damage (max 3 stacks)`, maxStacks: 3,
+      apply(p) { p.regenStacks = (p.regenStacks || 0) + 1; } },
+    { id: 'range',     name: 'Extended Range',             desc: '+10 bullet/beam range and +5 Thorn Aura radius (max 3 stacks)', maxStacks: 3,
+      apply(p) {
+        p.bulletRangeBonus = (p.bulletRangeBonus || 0) + 10;
+        p.thornRadiusBonus = (p.thornRadiusBonus || 0) + 5;
+        if (p.thornRadius > 0) p.thornRadius = (p.thornBaseRadius || 150) + p.thornRadiusBonus;
+      } },
+    // PRISM-only beam skills — fill the gap left by the magOnly skills above with levers
+    // unique to a permanent, ammo-less beam (width, sustained damage, damage-based healing).
+    { id: 'beamwidth', name: 'Focusing Lens',             desc: '+25% beam width', maxStacks: 4, laserOnly: true,
+      apply(p) { p.laserWidthMult = (p.laserWidthMult || 1) * 1.25; } },
+    { id: 'beamdps',   name: 'Overcharged Beam',          desc: '+20% beam damage', laserOnly: true,
+      apply(p) { p.laserDpsMult = (p.laserDpsMult || 1) * 1.20; } },
+    { id: 'beamleech',  name: 'Beam Leech',                desc: 'Heal for 2% of all beam damage dealt (max 3 stacks)', maxStacks: 3, laserOnly: true,
+      apply(p) { p.laserLifestealPct = (p.laserLifestealPct || 0) + 0.02; } },
+    { id: 'coolant',   name: 'Coolant Injector',           desc: '-20% beam heat drain, +20% beam heat regen (max 3 stacks)', maxStacks: 3, laserOnly: true,
+      apply(p) { p.laserHeatDrainMult = (p.laserHeatDrainMult || 1) * 0.8; p.laserHeatRegenMult = (p.laserHeatRegenMult || 1) * 1.2; } },
+  ];
+
+  let currentChoices = [];
+  let firstLevelSkillIds = new Set();
+  const REPEAT_WEIGHT = 0.08;
+
+  // ── LEVEL-UP / SKILL CHOICE SYSTEM — offer, render, apply picked skill ──
+  function triggerLevelUp() {
+    player.exp -= player.expToNext;
+    player.level++;
+    player.expToNext = expForLevel(player.level);
+    player.levelUpCount = (player.levelUpCount || 0) + 1;
+    addRainbowParticles(player.x, player.y, 40, 7);
+    addGlitterParticles(player.x, player.y, 24);
+    addShockwave(player.x, player.y, 140, '#c65fff');
+    addShockwave(player.x, player.y, 90, '#ff5fd6');
+    sfxLevelUp();
+    phase = 'levelup';
+    offerSkillChoices();
+  }
+
+  function weightedPickIndex(pool) {
+    const total = pool.reduce((sum, item) => sum + item.weight, 0);
+    let r = rand() * total;
+    for (let i = 0; i < pool.length; i++) {
+      r -= pool[i].weight;
+      if (r <= 0) return i;
+    }
+    return pool.length - 1;
+  }
+
+  function offerSkillChoices() {
+    const isFirstLevelUp = firstLevelSkillIds.size === 0;
+    const usesLaser = player.defaultWeapon === 'laser'; // PRISM: permanent beam, never fires magazine bullets
+    const eligible = SKILL_POOL.filter(skill =>
+      !(skill.maxStacks && (player.skills[skill.id] || 0) >= skill.maxStacks) &&
+      !(usesLaser && skill.magOnly) &&
+      !(!usesLaser && skill.laserOnly)
+    );
+    const pool = eligible.map(skill => ({
+      skill,
+      weight: (!isFirstLevelUp && firstLevelSkillIds.has(skill.id)) ? REPEAT_WEIGHT : 1,
+    }));
+    currentChoices = [];
+    const choiceCount = player.skillChoiceCount || 3;
+
+    // Warden: every 3rd level-up guarantees a Thorn Aura offer among the choices;
+    // the rest of the time it's still just in the normal random pool like anything else.
+    if (player.character === 'circle' && player.levelUpCount > 0 && player.levelUpCount % 3 === 0) {
+      const thornIdx = pool.findIndex(item => item.skill.id === 'thorn');
+      if (thornIdx !== -1) currentChoices.push(pool.splice(thornIdx, 1)[0].skill);
+    }
+
+    for (let i = currentChoices.length; i < choiceCount && pool.length; i++) {
+      const idx = weightedPickIndex(pool);
+      currentChoices.push(pool.splice(idx, 1)[0].skill);
+    }
+    if (isFirstLevelUp) {
+      currentChoices.forEach(skill => firstLevelSkillIds.add(skill.id));
+    }
+    renderLevelUpOverlay();
+  }
+
+  function renderLevelUpOverlay() {
+    levelupSub.textContent = `Level ${player.level} — choose a bonus`;
+    levelupCards.innerHTML = '';
+    currentChoices.forEach(skill => {
+      const card = document.createElement('div');
+      card.className = 'levelup-card';
+      const nameEl = document.createElement('div');
+      nameEl.className = 'lu-name';
+      nameEl.textContent = skill.name;
+      const descEl = document.createElement('div');
+      descEl.className = 'lu-desc';
+      descEl.textContent = skill.desc;
+      card.appendChild(nameEl);
+      card.appendChild(descEl);
+      card.addEventListener('click', () => chooseSkill(skill));
+      levelupCards.appendChild(card);
+    });
+    levelupOverlay.classList.remove('hidden');
+    controls.classList.add('hidden');
+  }
+
+  function chooseSkill(skill) {
+    skill.apply(player);
+    player.skills[skill.id] = (player.skills[skill.id] || 0) + 1;
+    sfxUiClick();
+    levelupOverlay.classList.add('hidden');
+    controls.classList.remove('hidden');
+    phase = 'playing';
+    saveCheckpoint();
+  }
+
+  // ── ENEMY SPAWNING & AI — wave/boss spawns, sentinel + ghost behavior, enemy factory ──
+  // Boss fights repeat every 15 waves, alternating: Ghost Gang on odd multiples of 15
+  // (15, 45, 75, ...), Sentinel on even multiples (30, 60, 90, ...) — each repeat scales
+  // up automatically since enemy HP already compounds with wave via hpScalePerWave.
+  const BOSS_CYCLE = 15;
+  function spawnWave() {
+    if (wave % BOSS_CYCLE === 0) {
+      const cycleIndex = wave / BOSS_CYCLE;
+      if (cycleIndex % 2 === 1) { spawnBossWave(); return; }
+      else { spawnBoss2Wave(); return; }
+    }
+    bossActive = false;
+    saveCheckpoint();
+    const w = CONFIG.wave;
+    const count = Math.min(w.countCap, w.base + wave * w.perWave + Math.floor(wave * wave * w.quadratic));
+    const stagger = Math.max(w.staggerMin, w.staggerStart - wave * w.staggerPerWave);
+    const myWave = wave;
+    for (let i = 0; i < count; i++) {
+      const id = setTimeout(() => {
+        if (phase !== 'over' && wave === myWave) enemies.push(makeEnemy());
+      }, Math.max(i * stagger, 1));
+      pendingSpawns.push({ id });
+    }
+  }
+
+  // Boss fight: the ghost gang arrives together, no regular grunts alongside them.
+  function spawnBossWave() {
+    saveCheckpoint();
+    bossActive = true;
+    bossBannerUntil = performance.now() + CONFIG.boss.bannerMs;
+    sfxBossBanner();
+    const st = CONFIG.enemy.types.ghost;
+    const hpMult = Math.pow(1 + CONFIG.enemy.hpScalePerWave, wave - 1);
+    const hp = Math.round(st.hp * hpMult);
+    const n = GHOST_GANG.length;
+    GHOST_GANG.forEach((g, i) => {
+      const ang = (Math.PI * 2 / n) * i + Math.PI / 4;
+      const x = Math.max(30, Math.min(WORLD_W - 30, player.x + Math.cos(ang) * CONFIG.boss.spawnDist));
+      const y = Math.max(30, Math.min(WORLD_H - 30, player.y + Math.sin(ang) * CONFIG.boss.spawnDist));
+      const isShooter = !!g.shooter;
+      enemies.push({
+        type: 'ghost', ghostId: g.id, ghostName: g.name, behavior: g.behavior,
+        x, y, r: st.r, speed: st.speed * g.speedMult, angle: 0,
+        hp, maxHp: hp, dmg: st.dmg, pts: st.pts, exp: st.exp, color: g.color,
+        flankOffset: 0, retargetAt: 0, lastHitAt: -Infinity,
+        fleeCount: 0, wasRetreating: false,
+        shooter: isShooter, lastShotAt: isShooter ? -rand() * CONFIG.boss.ghostShooter.fireRateMs : 0,
+      });
+    });
+  }
+
+  // Boss fight: a lone hovering core that circles the player, weaves bullet-ring and
+  // aimed-burst attacks, then summons reinforcements once it drops to half HP.
+  function spawnBoss2Wave() {
+    saveCheckpoint();
+    bossActive = true;
+    bossBannerUntil = performance.now() + CONFIG.boss2.bannerMs;
+    sfxBossBanner();
+    const st = CONFIG.enemy.types.sentinel;
+    const hpMult = Math.pow(1 + CONFIG.enemy.hpScalePerWave, wave - 1);
+    const hp = Math.round(st.hp * hpMult);
+    const ang = rand() * Math.PI * 2;
+    const x = Math.max(40, Math.min(WORLD_W - 40, player.x + Math.cos(ang) * CONFIG.boss2.spawnDist));
+    const y = Math.max(40, Math.min(WORLD_H - 40, player.y + Math.sin(ang) * CONFIG.boss2.spawnDist));
+    const now = performance.now();
+    enemies.push({
+      type: 'sentinel', x, y, r: st.r, speed: st.speed, angle: 0,
+      hp, maxHp: hp, dmg: st.dmg, pts: st.pts, exp: st.exp, color: st.color,
+      lastHitAt: -Infinity, strafeDir: rand() < 0.5 ? 1 : -1,
+      nextRingAt: now + 1400, nextBurstAt: now + 2200,
+      rotation: 0, enraged: false,
+    });
+  }
+
+  // Sentinel movement + attack pattern, called each frame while it's alive.
+  function updateSentinel(en, now, dt) {
+    const bc = CONFIG.boss2;
+    const a = Math.atan2(player.y - en.y, player.x - en.x);
+    const dPlayer = dist(en.x, en.y, player.x, player.y);
+    en.rotation += dt * (en.enraged ? 1.8 : 1);
+
+    if (dPlayer > bc.hoverRange + bc.hoverSlop) {
+      en.x += Math.cos(a) * en.speed;
+      en.y += Math.sin(a) * en.speed;
+    } else if (dPlayer < bc.hoverRange - bc.hoverSlop) {
+      en.x -= Math.cos(a) * en.speed;
+      en.y -= Math.sin(a) * en.speed;
+    } else {
+      en.x += Math.cos(a + Math.PI / 2) * en.speed * bc.strafeSpeedMult * en.strafeDir;
+      en.y += Math.sin(a + Math.PI / 2) * en.speed * bc.strafeSpeedMult * en.strafeDir;
+    }
+    en.x = Math.max(en.r, Math.min(WORLD_W - en.r, en.x));
+    en.y = Math.max(en.r, Math.min(WORLD_H - en.r, en.y));
+
+    const rateMult = en.enraged ? bc.enrageFireRateMult : 1;
+
+    if (now >= en.nextRingAt) {
+      en.nextRingAt = now + bc.ring.intervalMs * rateMult;
+      en.ringPhase = (en.ringPhase || 0) + bc.ring.phaseStep;
+      for (let i = 0; i < bc.ring.count; i++) {
+        const rAng = (Math.PI * 2 / bc.ring.count) * i + en.ringPhase;
+        enemyBullets.push({
+          x: en.x + Math.cos(rAng) * en.r, y: en.y + Math.sin(rAng) * en.r,
+          vx: Math.cos(rAng) * bc.ring.bulletSpeed, vy: Math.sin(rAng) * bc.ring.bulletSpeed,
+          r: bc.ring.bulletR, life: bc.ring.bulletLife, dmg: bc.ring.bulletDamage,
+        });
+      }
+      addParticles(en.x, en.y, en.color, 16, 3, true);
+      shake = Math.min(shake + 3, CONFIG.shake.onHitCap);
+    }
+
+    if (now >= en.nextBurstAt) {
+      en.nextBurstAt = now + bc.burst.intervalMs * rateMult;
+      const half = (bc.burst.count - 1) / 2;
+      for (let i = 0; i < bc.burst.count; i++) {
+        const bAng = a + (i - half) * bc.burst.spreadAngle;
+        const mx = en.x + Math.cos(bAng) * en.r, my = en.y + Math.sin(bAng) * en.r;
+        enemyBullets.push({
+          x: mx, y: my, vx: Math.cos(bAng) * bc.burst.bulletSpeed, vy: Math.sin(bAng) * bc.burst.bulletSpeed,
+          r: bc.burst.bulletR, life: bc.burst.bulletLife, dmg: bc.burst.bulletDamage,
+        });
+        addParticles(mx, my, '#eaf6ff', 3, 2, true);
+      }
+    }
+
+    if (!en.enraged && en.hp <= en.maxHp * bc.enrageHpFrac) {
+      en.enraged = true;
+      en.speed *= bc.enrageSpeedMult;
+      addRainbowParticles(en.x, en.y, 30, 6);
+      shake = Math.min(shake + CONFIG.shake.onKillCap, CONFIG.shake.onKillCap * 1.4);
+      for (let i = 0; i < bc.enrageAddCount; i++) {
+        const sAng = (Math.PI * 2 / bc.enrageAddCount) * i;
+        const sx = Math.max(30, Math.min(WORLD_W - 30, en.x + Math.cos(sAng) * 90));
+        const sy = Math.max(30, Math.min(WORLD_H - 30, en.y + Math.sin(sAng) * 90));
+        const addType = rand() < 0.5 ? 'brute' : 'grunt';
+        const et = CONFIG.enemy.types[addType];
+        const addHpMult = Math.pow(1 + CONFIG.enemy.hpScalePerWave, wave - 1);
+        const addHp = Math.round(et.hp * addHpMult);
+        enemies.push({
+          type: addType, x: sx, y: sy, r: et.r, speed: et.speed, angle: 0,
+          hp: addHp, maxHp: addHp, dmg: et.dmg, pts: et.pts, exp: et.exp, color: et.color,
+        });
+      }
+    }
+  }
+
+  function makeEnemy() {
+    const edge = Math.floor(rand() * 4);
+    let x, y;
+    switch (edge) {
+      case 0: x = rand() * WORLD_W; y = -30; break;
+      case 1: x = WORLD_W + 30; y = rand() * WORLD_H; break;
+      case 2: x = rand() * WORLD_W; y = WORLD_H + 30; break;
+      default: x = -30; y = rand() * WORLD_H; break;
+    }
+    const e = CONFIG.enemy;
+    const roll = rand();
+    let type = 'grunt';
+    if (wave >= e.bruteMinWave && roll > e.bruteRoll) type = 'brute';
+    else if (wave >= e.sprinterMinWave && roll > e.sprinterRoll) type = 'sprinter';
+
+    const st = e.types[type];
+    const hpMult = Math.pow(1 + e.hpScalePerWave, wave - 1); // enemies get tankier every wave
+    const hp = Math.round(st.hp * hpMult);
+    const en = { type, x, y, r: st.r, speed: st.speed, angle: 0,
+             hp, maxHp: hp, dmg: st.dmg, pts: st.pts, exp: st.exp, color: st.color };
+    if (type === 'sprinter') {
+      const rc = e.sprinterRanged;
+      // 0 at the wave sprinters first appear, ramping to 1 by scaleCapWave — locked in at spawn time
+      const t = Math.max(0, Math.min(1, (wave - e.sprinterMinWave) / (rc.scaleCapWave - e.sprinterMinWave)));
+      en.tacticsT = t;
+      en.speed = st.speed * (rc.agilityMultEarly + (1 - rc.agilityMultEarly) * t); // sluggish early, full agility at the cap
+      en.fireRateMs = rc.fireRateMsEarly + (rc.fireRateMsCap - rc.fireRateMsEarly) * t;
+      en.strafeMult = rc.strafeMult * t;      // no strafing at all until it's learned some tactics
+      en.backoffMult = Math.max(0, Math.min(1, t * 1.5)); // no back-off/dodge at all early on
+      en.strafeDir = rand() < 0.5 ? 1 : -1;
+      en.lastShotAt = -rand() * en.fireRateMs; // stagger first shots
+    }
+    return en;
+  }
+
+  // Each ghost gets its own classic pursuit behavior instead of a plain beeline.
+  function updateGhostMovement(en, now) {
+    const bc = CONFIG.boss;
+    const toPlayerAngle = Math.atan2(player.y - en.y, player.x - en.x);
+    let moveAngle = toPlayerAngle;
+
+    const canFlee = en.fleeCount < bc.maxFlees;
+    const retreating = canFlee && (en.hp / en.maxHp <= bc.retreatHpFrac);
+    if (retreating && !en.wasRetreating) en.fleeCount++; // spends one of its two panic-flees
+    en.wasRetreating = retreating;
+    if (retreating) {
+      // spooked — low on health, so it bolts away from the player instead of following its usual pattern
+      moveAngle = toPlayerAngle + Math.PI;
+    } else if (en.behavior === 'chase') {
+      // Blinky: relentless, always heads straight for the player.
+      moveAngle = toPlayerAngle;
+    } else if (en.behavior === 'ambush') {
+      // Pinky: aims for a point out ahead of where the player is facing, to cut them off.
+      const tx = player.x + Math.cos(player.angle) * bc.pinkyLead;
+      const ty = player.y + Math.sin(player.angle) * bc.pinkyLead;
+      moveAngle = Math.atan2(ty - en.y, tx - en.x);
+    } else if (en.behavior === 'flank') {
+      // Inky: erratic — swings wide before darting back in, re-rolling the swing periodically.
+      if (now >= en.retargetAt) {
+        en.flankOffset = (rand() < 0.5 ? 1 : -1) * (0.85 + rand() * 0.9);
+        en.retargetAt = now + 800 + rand() * 900;
+      }
+      const dPlayer = dist(en.x, en.y, player.x, player.y);
+      moveAngle = toPlayerAngle + (dPlayer < 220 ? en.flankOffset : en.flankOffset * 0.35);
+    } else if (en.behavior === 'shy') {
+      // Clyde: chases from a distance but loses his nerve and flees once he gets close.
+      const dPlayer = dist(en.x, en.y, player.x, player.y);
+      moveAngle = dPlayer < bc.clydeShyRange ? toPlayerAngle + Math.PI : toPlayerAngle;
+    }
+
+    const moveSpeed = retreating ? en.speed * bc.retreatSpeedMult : en.speed;
+    en.x += Math.cos(moveAngle) * moveSpeed;
+    en.y += Math.sin(moveAngle) * moveSpeed;
+    en.x = Math.max(en.r, Math.min(WORLD_W - en.r, en.x));
+    en.y = Math.max(en.r, Math.min(WORLD_H - en.r, en.y));
+    en.angle = toPlayerAngle; // eyes always track the player, ghost-style
+  }
+
+  // ── PARTICLE EFFECTS — hit sparks, explosions, rainbow/glitter bursts ──
+  function addParticles(x, y, color, n = 10, speed = 4, glow = false) {
+    for (let i = 0; i < n; i++) {
+      const a = rand() * Math.PI * 2, s = rand() * speed + 1;
+      particles.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 1, size: rand() * 3 + 1.5, color, glow });
+    }
+  }
+
+  function triggerBruteExplosion(x, y, now) {
+    const ecfg = CONFIG.enemy, pcfg = CONFIG.player;
+    addParticles(x, y, '#ffae42', 20, 7, true);
+    addParticles(x, y, '#ff4d4d', 10, 5, true);
+    addShockwave(x, y, ecfg.bruteExplodeRadius * 1.3, '#ffae42');
+    shake = Math.min(shake + CONFIG.shake.onKillCap, CONFIG.shake.onKillCap * 1.4);
+
+    if (dist(x, y, player.x, player.y) < ecfg.bruteExplodeRadius) {
+      let incoming = ecfg.bruteExplodeDamage;
+      if (player.hp <= pcfg.lowHpThreshold) {
+        const hpClamped = Math.max(1, player.hp);
+        const t = (pcfg.lowHpThreshold - hpClamped) / (pcfg.lowHpThreshold - 1);
+        const reduction = pcfg.lowHpMinReduction + t * (pcfg.lowHpMaxReduction - pcfg.lowHpMinReduction);
+        incoming *= (1 - reduction);
+      }
+      if (player.dmgReduction) incoming *= (1 - player.dmgReduction);
+      if (now < player.shieldInvulnUntil) {
+        incoming = 0;
+      } else if (player.shieldCharges > 0) {
+        player.shieldCharges--;
+        player.shieldInvulnUntil = now + 500;
+        syncShieldStacks(player, player.shieldCharges);
+        incoming = 0;
+        addParticles(player.x, player.y, '#7cfcff', 10, 4, true);
+        sfxShieldBlock();
+      }
+      if (incoming > 0) {
+        player.hp -= incoming;
+        player.lastDamagedAt = now;
+        shake = Math.min(shake + CONFIG.shake.onHit, CONFIG.shake.onHitCap);
+        addParticles(player.x, player.y, '#ff4d4d', 4, 3);
+        flashHit(now);
+      }
+    }
+
+    for (const other of enemies) {
+      if (dist(x, y, other.x, other.y) < ecfg.bruteExplodeRadius) {
+        other.hp -= ecfg.bruteExplodeDamage;
+      }
+    }
+  }
+
+  function addRainbowParticles(x, y, n = 10, speed = 4) {
+    const cfg = CONFIG.particles.killBurst;
+    for (let i = 0; i < n; i++) {
+      const a = rand() * Math.PI * 2, s = rand() * speed + 1;
+      const hue = Math.floor(rand() * 360);
+      const spark = rand() < cfg.sparkChance;
+      particles.push({
+        x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 1,
+        size: spark ? rand() * 1.3 + 0.8 : rand() * 3 + 1.8,
+        color: `hsl(${hue}, 100%, ${spark ? 85 : 60}%)`,
+        twinkleFreq: rand() * 12 + 8, twinklePhase: rand() * Math.PI * 2, glow: true,
+      });
+    }
+    for (let i = 0; i < Math.round(n * cfg.glintRatio); i++) {
+      const a = rand() * Math.PI * 2, s = rand() * speed * 0.7 + 0.5;
+      particles.push({
+        x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 1,
+        size: rand() * 1.2 + 0.7, color: '#ffffff',
+        twinkleFreq: rand() * 18 + 14, twinklePhase: rand() * Math.PI * 2, glow: true,
+      });
+    }
+  }
+
+  // Little drifting star-shaped sparkles that linger after a kill, like scattered glitter.
+  const GLITTER_COLORS = ['#ffffff', '#fff6cf', '#ffd166', '#c6f5ff', '#f2d9ff'];
+  function addGlitterParticles(x, y, n = 14) {
+    for (let i = 0; i < n; i++) {
+      const a = rand() * Math.PI * 2;
+      const s = rand() * 2.2 + 0.4;
+      particles.push({
+        x: x + (rand() - 0.5) * 10, y: y + (rand() - 0.5) * 10,
+        vx: Math.cos(a) * s, vy: Math.sin(a) * s - 0.6, // slight upward drift
+        gravity: 0.045,           // gentle fall, like glitter settling
+        life: 1, lifeSpan: rand() * 0.9 + 0.9, // lingers a bit longer than the burst particles
+        size: rand() * 2 + 1.1,
+        color: GLITTER_COLORS[Math.floor(rand() * GLITTER_COLORS.length)],
+        twinkleFreq: rand() * 22 + 16, twinklePhase: rand() * Math.PI * 2,
+        glow: true, sparkle: true, spin: rand() * Math.PI * 2, spinSpeed: (rand() - 0.5) * 6,
+      });
+    }
+  }
+
+  // ── WEAPONS / COMBAT — reload, raycast for laser, line-segment dist, laser tick, bullet firing ──
+  function startReload(now) {
+    player.reloading = true;
+    player.reloadEndAt = now + player.reloadMs;
+    sfxReload();
+  }
+
+  // Casts a ray from (x0,y0) along `angle`, up to maxRange, against both obstacles and the
+  // world boundary. Returns { dist, type: 'obstacle'|'wall'|'none', nx, ny } where (nx,ny) is
+  // the surface normal at the hit point — used both to stop the laser beam and, when PRISM has
+  // Bullet Bounce stacks, to reflect it (mirrors how bullets bounce off the same two things).
+  function raycastHit(x0, y0, angle, maxRange) {
+    const dx = Math.cos(angle), dy = Math.sin(angle);
+    let best = maxRange, type = 'none', nx = 0, ny = 0, hitObstacle = null;
+    for (const ob of obstacles) {
+      const ox = ob.x - x0, oy = ob.y - y0;
+      const t = ox * dx + oy * dy;
+      if (t < 0 || t > best) continue;
+      const px = x0 + dx * t, py = y0 + dy * t;
+      const dd = dist(px, py, ob.x, ob.y);
+      if (dd < ob.r) {
+        const back = Math.sqrt(Math.max(0, ob.r * ob.r - dd * dd));
+        const hit = t - back;
+        if (hit >= 0 && hit < best) {
+          best = hit; type = 'obstacle'; hitObstacle = ob;
+          const hx = x0 + dx * hit, hy = y0 + dy * hit;
+          const ndx = hx - ob.x, ndy = hy - ob.y;
+          const ndd = Math.sqrt(ndx * ndx + ndy * ndy) || 0.0001;
+          nx = ndx / ndd; ny = ndy / ndd;
+        }
+      }
+    }
+    if (dx > 1e-6) { const t = (WORLD_W - x0) / dx; if (t >= 0 && t < best) { best = t; type = 'wall'; nx = -1; ny = 0; hitObstacle = null; } }
+    else if (dx < -1e-6) { const t = (0 - x0) / dx; if (t >= 0 && t < best) { best = t; type = 'wall'; nx = 1; ny = 0; hitObstacle = null; } }
+    if (dy > 1e-6) { const t = (WORLD_H - y0) / dy; if (t >= 0 && t < best) { best = t; type = 'wall'; nx = 0; ny = -1; hitObstacle = null; } }
+    else if (dy < -1e-6) { const t = (0 - y0) / dy; if (t >= 0 && t < best) { best = t; type = 'wall'; nx = 0; ny = 1; hitObstacle = null; } }
+    return { dist: best, type, nx, ny, hitObstacle };
+  }
+
+  function pointSegmentDist(px, py, ax, ay, bx, by) {
+    const abx = bx - ax, aby = by - ay;
+    const abLen2 = abx * abx + aby * aby;
+    let t = abLen2 > 0 ? ((px - ax) * abx + (py - ay) * aby) / abLen2 : 0;
+    t = Math.max(0, Math.min(1, t));
+    return dist(px, py, ax + abx * t, ay + aby * t);
+  }
+
+  // PRISM's innate weapon: a continuous beam instead of discrete bullets. No ammo, no reload —
+  // it just ticks damage into everything each segment touches, every frame it's held. With
+  // Bullet Bounce stacks (player.bounceCount) the beam reflects off obstacles/walls, exactly
+  // like a bounced bullet, instead of stopping dead — each stack allows one more reflection.
+  function updateLaser(dt, now) {
+    const cfg = CONFIG.weapons.laser;
+    const totalRange = cfg.range + (player.bulletRangeBonus || 0);
+    const halfW = (cfg.width * (player.laserWidthMult || 1)) / 2;
+    const dmgMult = (player.bulletDamageMult || 1) * (player.laserDpsMult || 1);
+
+    let x = player.x, y = player.y, angle = player.angle, remaining = totalRange;
+    let bouncesLeft = player.bounceCount || 0;
+    const segments = [];
+    while (remaining > 0.5) {
+      const hit = raycastHit(x, y, angle, remaining);
+      const ex = x + Math.cos(angle) * hit.dist, ey = y + Math.sin(angle) * hit.dist;
+      segments.push({ x1: x, y1: y, x2: ex, y2: ey });
+      remaining -= hit.dist;
+      // Keep the struck obstacle glowing for as long as the beam holds on it — refreshed every
+      // frame the beam still touches it, so it fades out naturally once the beam moves off.
+      if (hit.type === 'obstacle' && hit.hitObstacle) hit.hitObstacle.flashUntil = now + 150;
+      if (hit.type === 'none' || bouncesLeft <= 0) break;
+      bouncesLeft--;
+      const dx = Math.cos(angle), dy = Math.sin(angle);
+      const vn = dx * hit.nx + dy * hit.ny;
+      const rdx = dx - 2 * vn * hit.nx, rdy = dy - 2 * vn * hit.ny;
+      angle = Math.atan2(rdy, rdx);
+      x = ex + hit.nx * 0.5; y = ey + hit.ny * 0.5; // nudge off the surface so it doesn't re-hit next segment
+      // Throttled: this recomputes every frame the beam holds still on a bounce point, so an
+      // unconditional spawn here would flood particles/shockwaves 60x/sec and tank the frame rate.
+      if (rand() < 0.15) {
+        addParticles(ex, ey, cfg.color, 3, 2.5, true); addShockwave(ex, ey, 14, cfg.color);
+        // Bullet Bounce: bullets get a per-stack chance to refund a mag round on a ricochet
+        // hit — the beam has no magazine, so the same chance instead refunds a slice of heat.
+        const ricochetChance = Math.min(
+          CONFIG.player.ricochetAmmoChanceCap,
+          (player.bounceCount || 0) * CONFIG.player.ricochetAmmoChancePerStack
+        );
+        if (rand() < ricochetChance) {
+          player.laserHeat = Math.min(cfg.maxHeat, player.laserHeat + cfg.maxHeat * 0.08);
+          addParticles(ex, ey, '#7cfcff', 4, 2, true);
+        }
+      }
+    }
+    player.laserActive = true;
+    player.laserSegments = segments;
+    const last = segments[segments.length - 1];
+    player.laserEndX = last.x2; player.laserEndY = last.y2;
+
+    const hitThisFrame = new Set();
+    for (const en of enemies) {
+      if (hitThisFrame.has(en)) continue;
+      let touched = false;
+      for (const seg of segments) {
+        if (pointSegmentDist(en.x, en.y, seg.x1, seg.y1, seg.x2, seg.y2) < halfW + en.r) { touched = true; break; }
+      }
+      if (!touched) continue;
+      hitThisFrame.add(en);
+      let dmg = cfg.dps * dt * dmgMult;
+      const isCrit = rand() < (player.critChance || 0);
+      if (isCrit) dmg *= 2.5;
+      en.hp -= dmg;
+      en.lastHitAt = now;
+      en.flashUntil = now + 80;
+      if (player.knockback) {
+        // Enemy chase movement isn't itself dt-scaled (it advances a flat `en.speed` per
+        // frame, calibrated for 60fps), so knockback needs the same *60 conversion from a
+        // per-second rate — the previous *6 was ~10x too weak to ever push back a chasing
+        // enemy, which is why Overcharge looked like it wasn't doing anything on the beam.
+        const knockAng = Math.atan2(en.y - player.y, en.x - player.x);
+        en.x += Math.cos(knockAng) * player.knockback * dt * 60;
+        en.y += Math.sin(knockAng) * player.knockback * dt * 60;
+      }
+      if (player.laserLifestealPct) player.hp = Math.min(player.maxHp, player.hp + dmg * player.laserLifestealPct);
+      if (rand() < 0.3) addParticles(en.x, en.y, cfg.color, isCrit ? 4 : 2, 2, true);
+    }
+  }
+
+  function shootBullet(now) {
+    if (player.weapon === 'laser') return; // laser damage is handled continuously by updateLaser
+    if (player.reloading) return;
+    if (player.magCurrent <= 0) { startReload(now); return; }
+    const effFireRate = (now < player.overdriveUntil) ? player.fireRate * 0.5 : player.fireRate; // Overdrive Core: temp attack-speed buff
+    if (now - lastShot < effFireRate) return;
+    lastShot = now;
+    if (prefs.flareOnShoot) player.flashUntil = now + 180;
+    sfxShoot(player.weapon);
+    player.magCurrent--;
+    const isSpread = player.weapon === 'spread';
+    const spreadCfg = CONFIG.weapons.spread;
+    const baseCount = isSpread ? spreadCfg.count : 1;
+    const extra = player.extraBullets || 0;
+    const totalCount = baseCount + extra;
+    const p = CONFIG.player;
+    const bulletSpeed = p.bulletSpeed * (player.bulletSpeedMult || 1);
+    const bulletR = Math.min(p.bulletMaxR, p.bulletR * (player.bulletSizeMult || 1));
+    const angleStep = isSpread ? spreadCfg.spreadAngle : 0.12;
+    const bulletColor = CONFIG.weapons[player.weapon].color;
+    for (let i = 0; i < totalCount; i++) {
+      const off = totalCount > 1 ? (i - (totalCount - 1) / 2) * angleStep : 0;
+      const a = player.angle + off;
+      bullets.push({
+        x: player.x + Math.cos(a) * player.r, y: player.y + Math.sin(a) * player.r,
+        vx: Math.cos(a) * bulletSpeed, vy: Math.sin(a) * bulletSpeed, r: bulletR,
+        life: p.bulletLife + (player.bulletRangeBonus || 0),
+        bounces: player.bounceCount || 0, pierce: player.pierceCount || 0,
+        color: bulletColor,
+      });
+    }
+    const m = CONFIG.particles.muzzle;
+    addParticles(player.x + Math.cos(player.angle) * player.r, player.y + Math.sin(player.angle) * player.r,
+                 bulletColor, m.n, m.speed, true);
+    if (player.magCurrent <= 0) startReload(now);
+  }
+
+  // ── MAIN UPDATE LOOP — per-frame physics, collisions, spawns, state transitions ──
+  function update(dt, now) {
+    let mx = 0, my = 0;
+    if (keyDown('KeyW', 'ArrowUp')) my -= 1;
+    if (keyDown('KeyS', 'ArrowDown')) my += 1;
+    if (keyDown('KeyA', 'ArrowLeft')) mx -= 1;
+    if (keyDown('KeyD', 'ArrowRight')) mx += 1;
+    if (moveStick.mag > 0.05) { mx = moveStick.dx; my = moveStick.dy; }
+    const mag = Math.sqrt(mx * mx + my * my);
+
+    // Firing intent, resolved up front so the laser weapon can lean on it below to slow
+    // movement and cap turning — PRISM's beam is heavy to run-and-gun with.
+    // On touch, the aim stick doubles as the fire trigger — but it used to fire the moment
+    // it left its deadzone (mag > 0.15), the same threshold used for just tracking aim
+    // angle below. That meant any attempt to point the stick also started firing, which is
+    // especially rough on PRISM: firing caps how fast you can turn (see turnRateRad), so
+    // you couldn't get the beam pointed before that same touch started limiting your turn
+    // speed. Aiming (angle tracking) still reacts to the lightest touch past the deadzone;
+    // firing now needs a firmer push toward the edge of the stick, so a light nudge just
+    // aims and pushing further out commits to shooting — like a soft/hard analog trigger.
+    // PRISM specifically no longer fires off the aim-stick push at all (only mouse/space/
+    // the dedicated fire button trigger it), since a light push meant only to aim was still
+    // prone to nudging past the threshold and starting the beam unintentionally.
+    const AIM_FIRE_PUSH = 0.6;
+    const isLaserWeapon = player.weapon === 'laser';
+    const wantsFire = mouseDown || keyDown('Space') || (isLaserWeapon && fireBtnDown) || (!isLaserWeapon && aimStick.mag > AIM_FIRE_PUSH);
+    const overdriveActive = now < player.overdriveUntil; // Overdrive Core pickup: temp overheat immunity + no heat drain
+    if (overdriveActive) player.laserOverheated = false;
+    const laserFiringThisFrame = wantsFire && isLaserWeapon && !player.laserOverheated;
+    const lcfg = CONFIG.weapons.laser;
+
+    if (mag > 0) {
+      const moveSpeed = laserFiringThisFrame ? player.speed * lcfg.moveSpeedMult : player.speed;
+      player.x += (mx / mag) * moveSpeed; player.y += (my / mag) * moveSpeed;
+      playerTrail.push({ x: player.x, y: player.y, t: now });
+      if (rand() < 0.6) {
+        const tx = player.x - (mx / mag) * player.r * 0.8, ty = player.y - (my / mag) * player.r * 0.8;
+        particles.push({
+          x: tx, y: ty, vx: -(mx / mag) * 0.6 + (rand() - 0.5) * 0.5, vy: -(my / mag) * 0.6 + (rand() - 0.5) * 0.5,
+          life: 0.5, size: rand() * 2 + 1, color: '#7cfcff', glow: true,
+        });
+      }
+    }
+    while (playerTrail.length && now - playerTrail[0].t > TRAIL_LIFE_MS) playerTrail.shift();
+    resolveObstaclePush(player);
+    player.x = Math.max(player.r, Math.min(WORLD_W - player.r, player.x));
+    player.y = Math.max(player.r, Math.min(WORLD_H - player.r, player.y));
+
+    // Nanite Regeneration: passive heal-over-time that only turns on after a stretch of not
+    // getting hit, same delayed-regen shape the ghost bosses already use while fleeing.
+    if (player.regenStacks && player.hp > 0 && player.hp < player.maxHp &&
+        now - (player.lastDamagedAt || -Infinity) >= CONFIG.player.regenDelayMs) {
+      player.hp = Math.min(player.maxHp, player.hp + CONFIG.player.regenHpPerSecPerStack * player.regenStacks * dt);
+    }
+
+    let targetAngle = player.angle;
+    if (aimStick.mag > 0.15) {
+      targetAngle = Math.atan2(aimStick.dy, aimStick.dx);
+    } else if (mouse.active) {
+      targetAngle = Math.atan2((mouse.y / zoom + cam.y) - player.y, (mouse.x / zoom + cam.x) - player.x);
+    }
+    if (laserFiringThisFrame) {
+      // Cap turn rate while the beam is active — the aim eases toward the target instead of
+      // snapping to it, so tracking fast-moving enemies while firing is noticeably harder.
+      let diff = targetAngle - player.angle;
+      diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+      const maxTurn = lcfg.turnRateRad * dt;
+      player.angle += Math.max(-maxTurn, Math.min(maxTurn, diff));
+    } else {
+      player.angle = targetAngle;
+    }
+
+    // Beam heat: drains while actively firing, regenerates otherwise. Bottoming out forces an
+    // overheat lockout that holds until heat climbs back past a partial-recharge threshold.
+    // Coolant Injector stacks soften both rates; an active Overdrive Core suspends drain entirely.
+    if (isLaserWeapon) {
+      if (laserFiringThisFrame) {
+        if (!overdriveActive) player.laserHeat -= lcfg.heatDrainPerSec * (player.laserHeatDrainMult || 1) * dt;
+        if (player.laserHeat <= 0) { player.laserHeat = 0; if (!overdriveActive) player.laserOverheated = true; }
+      } else {
+        player.laserHeat = Math.min(lcfg.maxHeat, player.laserHeat + lcfg.heatRegenPerSec * (player.laserHeatRegenMult || 1) * dt);
+        if (player.laserOverheated && player.laserHeat >= lcfg.overheatRegenThreshold) player.laserOverheated = false;
+      }
+    }
+
+    let firing = wantsFire;
+    if (laserFiringThisFrame) { updateLaser(dt, now); laserSfxStart(); }
+    else {
+      player.laserActive = false;
+      laserSfxStop();
+      if (firing && !isLaserWeapon) shootBullet(now);
+    }
+
+    if (player.weaponTimerMs > 0) {
+      player.weaponTimerMs -= dt * 1000;
+      if (player.weaponTimerMs <= 0) { player.weapon = player.defaultWeapon; player.fireRate = player.baseFireRate; }
+    }
+
+    if (player.reloading && now >= player.reloadEndAt) {
+      player.reloading = false;
+      player.magCurrent = player.magazineSize;
+    }
+
+    for (let i = bullets.length - 1; i >= 0; i--) {
+      const b = bullets[i];
+      b.x += b.vx; b.y += b.vy; b.life--;
+      if (rand() < 0.85) {
+        particles.push({
+          x: b.x - b.vx * 0.3, y: b.y - b.vy * 0.3, vx: -b.vx * 0.05, vy: -b.vy * 0.05,
+          life: 1, lifeSpan: 0.35, size: b.r * 0.7, color: b.color || '#ffffff', glow: true,
+        });
+      }
+
+      let hitEdge = false;
+      if (b.x < 0) { b.x = 0; b.vx *= -1; hitEdge = true; }
+      else if (b.x > WORLD_W) { b.x = WORLD_W; b.vx *= -1; hitEdge = true; }
+      if (b.y < 0) { b.y = 0; b.vy *= -1; hitEdge = true; }
+      else if (b.y > WORLD_H) { b.y = WORLD_H; b.vy *= -1; hitEdge = true; }
+
+      if (hitEdge) {
+        if ((b.bounces || 0) > 0) { b.bounces--; b.hasBounced = true; }
+        else { bullets.splice(i, 1); continue; }
+      }
+
+      let hitObstacle = null, hitNx = 0, hitNy = 0;
+      for (const ob of obstacles) {
+        const ddx = b.x - ob.x, ddy = b.y - ob.y;
+        const dd = Math.sqrt(ddx * ddx + ddy * ddy) || 0.0001;
+        if (dd < ob.r + b.r) { hitObstacle = ob; hitNx = ddx / dd; hitNy = ddy / dd; break; }
+      }
+      if (hitObstacle) {
+        hitObstacle.flashUntil = now + 180;
+        if ((b.bounces || 0) > 0) {
+          b.bounces--;
+          b.hasBounced = true;
+          const vn = b.vx * hitNx + b.vy * hitNy;
+          b.vx -= 2 * vn * hitNx;
+          b.vy -= 2 * vn * hitNy;
+          // nudge the bullet just outside the obstacle so it doesn't re-trigger next frame
+          b.x = hitObstacle.x + hitNx * (hitObstacle.r + b.r + 0.5);
+          b.y = hitObstacle.y + hitNy * (hitObstacle.r + b.r + 0.5);
+          addParticles(b.x, b.y, '#ffffff', 4, 2.5, true);
+        } else {
+          addParticles(b.x, b.y, '#ffd166', 4, 2.5, true);
+          if ((b.pierce || 0) > 0) { b.pierce--; }
+          else { bullets.splice(i, 1); continue; }
+        }
+      }
+
+      if (b.life <= 0) bullets.splice(i, 1);
+    }
+
+    const pcfg = CONFIG.player;
+
+    for (let i = enemyBullets.length - 1; i >= 0; i--) {
+      const b = enemyBullets[i];
+      b.x += b.vx; b.y += b.vy; b.life--;
+      let gone = false;
+
+      if (b.x < -20 || b.x > WORLD_W + 20 || b.y < -20 || b.y > WORLD_H + 20) gone = true;
+
+      if (!gone) {
+        for (const ob of obstacles) {
+          if (dist(b.x, b.y, ob.x, ob.y) < ob.r + b.r) { gone = true; ob.flashUntil = now + 180; addParticles(b.x, b.y, '#ffd166', 3, 2, true); break; }
+        }
+      }
+
+      if (!gone && dist(b.x, b.y, player.x, player.y) < player.r + b.r) {
+        let incoming = b.dmg;
+        if (player.hp <= pcfg.lowHpThreshold) {
+          const hpClamped = Math.max(1, player.hp);
+          const t = (pcfg.lowHpThreshold - hpClamped) / (pcfg.lowHpThreshold - 1);
+          const reduction = pcfg.lowHpMinReduction + t * (pcfg.lowHpMaxReduction - pcfg.lowHpMinReduction);
+          incoming *= (1 - reduction);
+        }
+        if (player.dmgReduction) incoming *= (1 - player.dmgReduction);
+        if (now < player.shieldInvulnUntil) {
+          incoming = 0;
+        } else if (player.shieldCharges > 0) {
+          player.shieldCharges--;
+          player.shieldInvulnUntil = now + 500;
+          syncShieldStacks(player, player.shieldCharges);
+          incoming = 0;
+          addParticles(player.x, player.y, '#7cfcff', 10, 4, true);
+          sfxShieldBlock();
+        }
+        if (incoming > 0) {
+          player.hp -= incoming;
+          player.lastDamagedAt = now;
+          shake = Math.min(shake + CONFIG.shake.onHit, CONFIG.shake.onHitCap);
+          addParticles(player.x, player.y, '#ffd166', 5, 3.5, true);
+          flashHit(now);
+        }
+        gone = true;
+      }
+
+      if (gone || b.life <= 0) enemyBullets.splice(i, 1);
+    }
+
+    for (let i = enemies.length - 1; i >= 0; i--) {
+      const en = enemies[i];
+      const a = Math.atan2(player.y - en.y, player.x - en.x);
+      en.angle = a;
+
+      if (en.type === 'sprinter') {
+        const rc = CONFIG.enemy.sprinterRanged;
+        const dToPlayer = dist(en.x, en.y, player.x, player.y);
+        if (dToPlayer > rc.range + rc.slop) {
+          // too far — close the gap (always allowed, even at tactics level 0)
+          en.x += Math.cos(a) * en.speed;
+          en.y += Math.sin(a) * en.speed;
+        } else if (dToPlayer < rc.range - rc.slop) {
+          // too close — back off, scaled by tactics: early sprinters don't dodge at all, just hold still
+          en.x -= Math.cos(a) * en.speed * en.backoffMult;
+          en.y -= Math.sin(a) * en.speed * en.backoffMult;
+        } else {
+          // in the pocket — strafe sideways while holding range, scaled by tactics
+          en.x += Math.cos(a + Math.PI / 2) * en.speed * en.strafeMult * en.strafeDir;
+          en.y += Math.sin(a + Math.PI / 2) * en.speed * en.strafeMult * en.strafeDir;
+        }
+        if (dToPlayer <= rc.range + rc.slop * 1.5 && now - en.lastShotAt >= en.fireRateMs) {
+          en.lastShotAt = now;
+          const mx = en.x + Math.cos(a) * en.r, my = en.y + Math.sin(a) * en.r;
+          enemyBullets.push({
+            x: mx, y: my, vx: Math.cos(a) * rc.bulletSpeed, vy: Math.sin(a) * rc.bulletSpeed,
+            r: rc.bulletR, life: rc.bulletLife, dmg: rc.bulletDamage,
+          });
+          addParticles(mx, my, en.color, 4, 2.4, true);
+        }
+      } else if (en.type === 'ghost') {
+        updateGhostMovement(en, now);
+        if (en.wasRetreating) {
+          // fleeing: regenerate fast, but only back up to 40% HP before rejoining the fight
+          const fleeCap = en.maxHp * CONFIG.boss.fleeRegenCapFrac;
+          if (en.hp < fleeCap) en.hp = Math.min(fleeCap, en.hp + en.maxHp * CONFIG.boss.fleeRegenPerSec * dt);
+        } else if (en.hp < en.maxHp && now - en.lastHitAt >= CONFIG.boss.regenDelayMs) {
+          en.hp = Math.min(en.maxHp, en.hp + en.maxHp * CONFIG.boss.regenPerSec * dt);
+        }
+        if (en.shooter) {
+          const gs = CONFIG.boss.ghostShooter;
+          if (now - en.lastShotAt >= gs.fireRateMs) {
+            en.lastShotAt = now;
+            const mx = en.x + Math.cos(a) * en.r, my = en.y + Math.sin(a) * en.r;
+            enemyBullets.push({
+              x: mx, y: my, vx: Math.cos(a) * gs.bulletSpeed, vy: Math.sin(a) * gs.bulletSpeed,
+              r: gs.bulletR, life: gs.bulletLife, dmg: gs.bulletDamage,
+            });
+            addParticles(mx, my, en.color, 4, 2.4, true);
+          }
+        }
+      } else if (en.type === 'sentinel') {
+        updateSentinel(en, now, dt);
+      } else {
+        en.x += Math.cos(a) * en.speed;
+        en.y += Math.sin(a) * en.speed;
+      }
+      if (en.type !== 'ghost' && en.type !== 'sentinel') resolveObstaclePush(en); // boss types drift straight through obstacles
+
+      if (dist(en.x, en.y, player.x, player.y) < en.r + player.r) {
+        let incoming = en.dmg * dt;
+        if (player.hp <= pcfg.lowHpThreshold) {
+          const hpClamped = Math.max(1, player.hp);
+          const t = (pcfg.lowHpThreshold - hpClamped) / (pcfg.lowHpThreshold - 1);
+          const reduction = pcfg.lowHpMinReduction + t * (pcfg.lowHpMaxReduction - pcfg.lowHpMinReduction);
+          incoming *= (1 - reduction);
+        }
+        if (player.dmgReduction) incoming *= (1 - player.dmgReduction);
+        if (now < player.shieldInvulnUntil) {
+          incoming = 0;
+        } else if (player.shieldCharges > 0) {
+          player.shieldCharges--;
+          player.shieldInvulnUntil = now + 500;
+          syncShieldStacks(player, player.shieldCharges);
+          incoming = 0;
+          addParticles(player.x, player.y, '#7cfcff', 10, 4, true);
+          sfxShieldBlock();
+        }
+        if (incoming > 0) {
+          player.hp -= incoming;
+          player.lastDamagedAt = now;
+          shake = Math.min(shake + CONFIG.shake.onHit, CONFIG.shake.onHitCap);
+          addParticles(player.x, player.y, '#ff4d4d', 4, 3);
+          flashHit(now);
+        }
+      }
+
+      for (let j = bullets.length - 1; j >= 0; j--) {
+        const b = bullets[j];
+        if (dist(b.x, b.y, en.x, en.y) < en.r + b.r) {
+          let dmg = CONFIG.enemy.bulletDamage * (player.bulletDamageMult || 1);
+          const isCrit = rand() < (player.critChance || 0);
+          if (isCrit) dmg *= 2.5;
+          en.hp -= dmg;
+          en.lastHitAt = now;
+          en.flashUntil = now + 80;
+          sfxEnemyHit(isCrit);
+
+          if (player.knockback) {
+            const knockAng = Math.atan2(en.y - player.y, en.x - player.x);
+            en.x += Math.cos(knockAng) * player.knockback;
+            en.y += Math.sin(knockAng) * player.knockback;
+          }
+
+          if (b.hasBounced && (player.bounceCount || 0) > 0 && !player.reloading && player.magCurrent < player.magazineSize) {
+            const ricochetChance = Math.min(
+              CONFIG.player.ricochetAmmoChanceCap,
+              (player.bounceCount || 0) * CONFIG.player.ricochetAmmoChancePerStack
+            );
+            if (rand() < ricochetChance) {
+              player.magCurrent = Math.min(player.magazineSize, player.magCurrent + 1);
+              addParticles(b.x, b.y, '#7cfcff', 6, 3, true);
+            }
+          }
+
+          if (player.explosiveChance && rand() < player.explosiveChance) {
+            for (const other of enemies) {
+              if (other === en) continue;
+              if (dist(b.x, b.y, other.x, other.y) < pcfg.explosiveRadius) {
+                other.hp -= dmg * 0.6;
+                other.lastHitAt = now;
+              }
+            }
+            addParticles(b.x, b.y, '#ffae42', 10, 3, true);
+          }
+
+          // core colored burst in the enemy's own color
+          addParticles(b.x, b.y, en.color, CONFIG.particles.hitBurst.n * (isCrit ? 1.6 : 1), CONFIG.particles.hitBurst.speed, true);
+
+          // bright directional sparks kicking back along the impact line
+          const impactAngle = Math.atan2(b.y - en.y, b.x - en.x);
+          const sparkCfg = CONFIG.particles.hitSpark;
+          for (let k = 0; k < sparkCfg.n * (isCrit ? 1.8 : 1); k++) {
+            const sAng = impactAngle + (rand() - 0.5) * 1.1;
+            const sSpd = rand() * sparkCfg.speed + 1.5;
+            particles.push({
+              x: b.x, y: b.y, vx: Math.cos(sAng) * sSpd, vy: Math.sin(sAng) * sSpd,
+              life: 1, size: rand() * (isCrit ? 1.8 : 1.2) + 0.6, color: isCrit ? '#fff6cf' : '#ffffff',
+              twinkleFreq: rand() * 10 + 10, twinklePhase: rand() * Math.PI * 2, glow: true,
+            });
+          }
+
+          // quick little impact ring, bigger and gold-tinted on a crit
+          addShockwave(b.x, b.y, en.r * (isCrit ? 2.4 : 1.5), isCrit ? '#ffd166' : '#eafcff');
+          shake = Math.min(shake + (isCrit ? 3 : 1.2), CONFIG.shake.onHitCap);
+
+          if ((b.pierce || 0) > 0) { b.pierce--; } else { bullets.splice(j, 1); }
+          break;
+        }
+      }
+
+      if (player.thornDamage > 0 && dist(en.x, en.y, player.x, player.y) < (player.thornRadius + en.r)) {
+        en.hp -= player.thornDamage * dt;
+        en.lastHitAt = now;
+      }
+    }
+
+    for (let i = enemies.length - 1; i >= 0; i--) {
+      const en = enemies[i];
+      if (en.hp <= 0) {
+        score += en.pts * combo;
+        sfxEnemyKill();
+        if (score > highScore) {
+          if (!recordBrokenThisRun) { recordBrokenThisRun = true; triggerHighScoreCelebration(now, score); }
+          highScore = score;
+          saveHighScore(highScore);
+        }
+        combo = Math.min(combo + CONFIG.combo.gainPerKill, CONFIG.combo.max);
+        comboTimer = CONFIG.combo.windowSec;
+        addRainbowParticles(en.x, en.y, CONFIG.particles.killBurst.n, CONFIG.particles.killBurst.speed);
+        addGlitterParticles(en.x, en.y, 14);
+        shake = Math.min(shake + CONFIG.shake.onKill, CONFIG.shake.onKillCap);
+        if (player.lifeSteal) player.hp = Math.min(player.maxHp, player.hp + player.lifeSteal);
+        if (en.exp > 0 && orbs.length < CONFIG.pickup.maxAlive) {
+          orbs.push({ x: en.x, y: en.y, r: CONFIG.pickup.orbR, exp: en.exp, type: 'exp', spin: rand() * Math.PI * 2 });
+        }
+        if (rand() < CONFIG.pickup.hpDropChance && orbs.length < CONFIG.pickup.maxAlive) {
+          orbs.push({ x: en.x + (rand() - 0.5) * 14, y: en.y + (rand() - 0.5) * 14, r: CONFIG.pickup.hpOrbR, heal: CONFIG.pickup.hpHeal, type: 'hp', spin: rand() * Math.PI * 2 });
+        }
+        if (rand() < CONFIG.pickup.coreDropChance && orbs.length < CONFIG.pickup.maxAlive) {
+          orbs.push({ x: en.x + (rand() - 0.5) * 14, y: en.y + (rand() - 0.5) * 14, r: CONFIG.pickup.coreOrbR, type: 'core', spin: rand() * Math.PI * 2 });
+        }
+        if (en.type === 'brute' && rand() < CONFIG.enemy.bruteExplodeChance) {
+          triggerBruteExplosion(en.x, en.y, now);
+        }
+        enemies.splice(i, 1);
+      }
+    }
+
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x += p.vx; p.y += p.vy; p.vx *= 0.94; p.vy *= 0.94;
+      if (p.gravity) p.vy += p.gravity;
+      if (p.spinSpeed) p.spin += p.spinSpeed * dt;
+      p.life -= dt * CONFIG.particles.fadeRate / (p.lifeSpan || 1);
+      if (p.life <= 0) particles.splice(i, 1);
+    }
+    if (particles.length > CONFIG.particles.maxAlive) particles.splice(0, particles.length - CONFIG.particles.maxAlive);
+
+    for (let i = shockwaves.length - 1; i >= 0; i--) {
+      const s = shockwaves[i];
+      s.r += (s.maxR - s.r) * 0.18 + 1;
+      s.alpha -= dt * 2.2;
+      if (s.alpha <= 0 || s.r >= s.maxR + 4) shockwaves.splice(i, 1);
+    }
+
+    const pk = CONFIG.pickup;
+    const magnetR = pk.baseMagnet + (player.magnetRadius || 0);
+    for (let i = orbs.length - 1; i >= 0; i--) {
+      const o = orbs[i];
+      const d = dist(o.x, o.y, player.x, player.y);
+      if (d < player.r + o.r) {
+        if (o.type === 'hp') {
+          player.hp = Math.min(player.maxHp, player.hp + o.heal);
+          addParticles(o.x, o.y, '#5cff9e', 10, 3, true);
+          sfxPickup('hp');
+        } else if (o.type === 'core') {
+          // Overdrive Core: instant partial heat refill for PRISM (plus a brief overheat-immune,
+          // no-drain window) or a temporary attack-speed buff for magazine weapons.
+          const lc = CONFIG.weapons.laser;
+          player.laserHeat = Math.min(lc.maxHeat, player.laserHeat + lc.maxHeat * CONFIG.pickup.coreHeatRestoreFrac);
+          player.laserOverheated = false;
+          player.overdriveUntil = now + CONFIG.pickup.coreOverdriveMs;
+          addParticles(o.x, o.y, '#ffd166', 14, 4, true);
+          addShockwave(o.x, o.y, 60, '#ffd166');
+          sfxPickup('core');
+        } else {
+          player.exp += o.exp;
+          addParticles(o.x, o.y, '#c65fff', 8, 3, true);
+          sfxPickup('exp');
+        }
+        orbs.splice(i, 1);
+        continue;
+      }
+      if (d < magnetR) {
+        const t = 1 - Math.max(0, d - (player.r + o.r)) / magnetR;
+        const speed = pk.pullSpeedMin + (pk.pullSpeedMax - pk.pullSpeedMin) * t;
+        const ang = Math.atan2(player.y - o.y, player.x - o.x);
+        o.x += Math.cos(ang) * speed;
+        o.y += Math.sin(ang) * speed;
+      }
+    }
+
+    if (comboTimer > 0) { comboTimer -= dt; if (comboTimer <= 0) combo = 1; }
+    if (shake > 0) shake *= CONFIG.shake.decay;
+
+    if (enemies.length === 0) { wave++; spawnWave(); }
+    if (player.hp <= 0) { phase = 'over'; laserSfxStop(); clearCheckpoint(); showGameOverOverlay(); }
+    else if (player.exp >= player.expToNext) { triggerLevelUp(); }
+
+    updateCamera();
+  }
+
+  // ── RENDERING — player/enemy sprite drawers, trail, laser beam, main render() ──
+  function drawShip(x, y, angle, r, color) {
+    const pts = [[r, 0], [-r * 0.7, r * 0.8], [-r * 0.3, 0], [-r * 0.7, -r * 0.8]];
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(angle);
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(pts[0][0], pts[0][1]);
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawPlayerSquare(x, y, angle, r, color) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(angle);
+    ctx.fillStyle = color;
+    const s = r * 1.5;
+    ctx.fillRect(-s / 2, -s / 2, s, s);
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.beginPath(); ctx.arc(s * 0.32, 0, s * 0.15, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+
+  function drawPlayerCircle(x, y, angle, r, color) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.arc(0, 0, r * 1.05, 0, Math.PI * 2); ctx.fill();
+    ctx.rotate(angle);
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.beginPath(); ctx.arc(r * 0.55, 0, r * 0.2, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+
+  function drawPlayerDiamond(x, y, angle, r, color) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(angle);
+    ctx.fillStyle = color;
+    const s = r * 1.35;
+    ctx.beginPath();
+    ctx.moveTo(s, 0);
+    ctx.lineTo(0, -s * 0.72);
+    ctx.lineTo(-s * 0.65, 0);
+    ctx.lineTo(0, s * 0.72);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.beginPath(); ctx.arc(s * 0.25, 0, s * 0.14, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+
+  // The beam itself: a soft outer glow, a bright core, and a hot white centerline.
+  function drawLaserBeam(p) {
+    if (!p.laserActive) return;
+    const cfg = CONFIG.weapons.laser;
+    const widthMult = p.laserWidthMult || 1;
+    const segs = (p.laserSegments && p.laserSegments.length) ? p.laserSegments : [{ x1: p.x, y1: p.y, x2: p.laserEndX, y2: p.laserEndY }];
+    const strokeAll = (width, color, alpha) => {
+      ctx.globalAlpha = alpha;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.beginPath();
+      for (const s of segs) { ctx.moveTo(s.x1, s.y1); ctx.lineTo(s.x2, s.y2); }
+      ctx.stroke();
+    };
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.lineCap = 'round';
+    strokeAll(cfg.width * widthMult * 2.4, cfg.color, 0.22);
+    strokeAll(cfg.width * widthMult * 0.55, cfg.color, 0.85);
+    strokeAll(cfg.width * widthMult * 0.2, '#ffffff', 1);
+    ctx.restore();
+  }
+
+  function mixColorToWhite(hex, t) {
+    const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+    const nr = Math.round(r + (255 - r) * t), ng = Math.round(g + (255 - g) * t), nb = Math.round(b + (255 - b) * t);
+    return `rgb(${nr},${ng},${nb})`;
+  }
+
+  // Light-cycle style energy ribbon: a glowing neon-purple trail that follows the player's
+  // exact path, tapering thin and fading to nothing over TRAIL_LIFE_MS.
+  function drawPlayerTrail(now) {
+    const n = playerTrail.length;
+    if (n < 2) return;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    for (let i = 0; i < n - 1; i++) {
+      const a = playerTrail[i], b = playerTrail[i + 1];
+      const ageT = Math.max(0, Math.min(1, (now - b.t) / TRAIL_LIFE_MS)); // 0 = fresh (at player), 1 = about to vanish
+      const fade = 1 - ageT;
+      if (fade <= 0.02) continue;
+      const width = player.r * (1.8 - ageT * 1.1);
+
+      // soft outer glow pass
+      ctx.strokeStyle = '#b84dff';
+      ctx.globalAlpha = fade * fade * 0.11;
+      ctx.lineWidth = Math.max(1, width * 1.4);
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+
+      // bright violet mid layer
+      ctx.strokeStyle = '#d68cff';
+      ctx.globalAlpha = fade * 0.18;
+      ctx.lineWidth = Math.max(0.6, width * 0.55);
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+
+      // hot white-violet core, only near the fresh end for that energized look
+      if (ageT < 0.4) {
+        ctx.strokeStyle = '#f6e6ff';
+        ctx.globalAlpha = fade * (1 - ageT / 0.4) * 0.2;
+        ctx.lineWidth = Math.max(0.35, width * 0.2);
+        ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+      }
+    }
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  }
+
+  function drawPlayerAt(x, y, angle, r, player) {
+    const baseColor = player.color || '#eafcff';
+    const flashT = player.flashUntil ? Math.max(0, Math.min(1, (player.flashUntil - performance.now()) / 180)) : 0;
+    if (flashT > 0) {
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      const halo = ctx.createRadialGradient(x, y, r * 0.2, x, y, r * 2.4);
+      halo.addColorStop(0, '#ffffff');
+      halo.addColorStop(0.5, baseColor);
+      halo.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.globalAlpha = 0.55 * flashT;
+      ctx.fillStyle = halo;
+      ctx.beginPath(); ctx.arc(x, y, r * 2.4, 0, Math.PI * 2); ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.restore();
+    }
+    // PRISM: a pulsing halo in the beam's own color while the laser is actively firing —
+    // shifts to a hot red once heat runs low (unless Overdrive is masking it), so the glow
+    // itself doubles as an at-a-glance overheat warning.
+    if (player.laserActive) {
+      const lc = CONFIG.weapons.laser;
+      const heatFrac = (player.laserHeat != null) ? player.laserHeat / lc.maxHeat : 1;
+      const overdriveOn = performance.now() < (player.overdriveUntil || 0);
+      const hot = !overdriveOn && heatFrac < lc.lowHeatWarnFrac;
+      const glowColor = hot ? '#ff4d4d' : lc.color;
+      const pulse = 0.75 + 0.25 * Math.sin(performance.now() / 90);
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      const beamHalo = ctx.createRadialGradient(x, y, r * 0.3, x, y, r * 2.3);
+      beamHalo.addColorStop(0, glowColor);
+      beamHalo.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.globalAlpha = 0.5 * pulse;
+      ctx.fillStyle = beamHalo;
+      ctx.beginPath(); ctx.arc(x, y, r * 2.3, 0, Math.PI * 2); ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.restore();
+    }
+    const color = flashT > 0 ? mixColorToWhite(baseColor, flashT * 0.8) : baseColor;
+    if (player.shape === 'square') drawPlayerSquare(x, y, angle, r, color);
+    else if (player.shape === 'circle') drawPlayerCircle(x, y, angle, r, color);
+    else if (player.shape === 'diamond') drawPlayerDiamond(x, y, angle, r, color);
+    else drawShip(x, y, angle, r, color);
+  }
+
+  function drawEnemyCircle(x, y, angle, r, color) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill();
+    ctx.rotate(angle); // small directional notch so facing is still readable
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.beginPath(); ctx.arc(r * 0.55, 0, r * 0.22, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+
+  function drawGhost(x, y, angle, r, color, flashing) {
+    ctx.save();
+    ctx.translate(x, y);
+
+    // soft ghostly halo
+    ctx.globalCompositeOperation = 'lighter';
+    const halo = ctx.createRadialGradient(0, 0, r * 0.2, 0, 0, r * 1.9);
+    halo.addColorStop(0, color);
+    halo.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.globalAlpha = 0.3;
+    ctx.fillStyle = halo;
+    ctx.beginPath(); ctx.arc(0, 0, r * 1.9, 0, Math.PI * 2); ctx.fill();
+    ctx.globalCompositeOperation = 'source-over';
+
+    // body: domed top, wavy skirt bottom — the classic ghost silhouette
+    ctx.globalAlpha = 0.92;
+    ctx.fillStyle = flashing ? '#ffffff' : color;
+    ctx.beginPath();
+    ctx.arc(0, -r * 0.05, r, Math.PI, 0, false);
+    ctx.lineTo(r, r * 0.7);
+    const bumps = 4, bw = (r * 2) / bumps;
+    for (let i = 0; i < bumps; i++) {
+      const bx = r - bw * (i + 0.5);
+      const dip = i % 2 === 0 ? r * 1.05 : r * 0.72;
+      ctx.quadraticCurveTo(bx + bw * 0.25, dip, bx - bw * 0.25, r * 0.72);
+    }
+    ctx.lineTo(-r, r * 0.7);
+    ctx.closePath();
+    ctx.fill();
+
+    // eyes, pupils tracking the given angle
+    const eyeOffX = r * 0.42, eyeOffY = -r * 0.1, eyeR = r * 0.34;
+    const pupilDX = Math.cos(angle) * eyeR * 0.4, pupilDY = Math.sin(angle) * eyeR * 0.4;
+    for (const side of [-1, 1]) {
+      ctx.fillStyle = '#eaf6ff';
+      ctx.beginPath(); ctx.ellipse(side * eyeOffX, eyeOffY, eyeR * 0.72, eyeR, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#1a1a2e';
+      ctx.beginPath(); ctx.arc(side * eyeOffX + pupilDX, eyeOffY + pupilDY, eyeR * 0.42, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  }
+
+  function drawSentinel(en, flashing) {
+    const { x, y, r, rotation, enraged } = en;
+    const coreColor = enraged ? '#ff4d4d' : en.color;
+    ctx.save();
+    ctx.translate(x, y);
+
+    // outer halo, hotter and pulsing once enraged
+    ctx.globalCompositeOperation = 'lighter';
+    const pulse = 0.28 + 0.12 * Math.sin(performance.now() / (enraged ? 90 : 200));
+    const halo = ctx.createRadialGradient(0, 0, r * 0.3, 0, 0, r * 2.4);
+    halo.addColorStop(0, coreColor);
+    halo.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.globalAlpha = pulse;
+    ctx.fillStyle = halo;
+    ctx.beginPath(); ctx.arc(0, 0, r * 2.4, 0, Math.PI * 2); ctx.fill();
+    ctx.globalCompositeOperation = 'source-over';
+
+    // outer rotating hex shell
+    ctx.save();
+    ctx.rotate(rotation);
+    ctx.strokeStyle = flashing ? '#ffffff' : coreColor;
+    ctx.lineWidth = 4;
+    ctx.globalAlpha = 0.85;
+    ctx.beginPath();
+    for (let i = 0; i < 6; i++) {
+      const ang = (Math.PI * 2 / 6) * i;
+      const px = Math.cos(ang) * r, py = Math.sin(ang) * r;
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.stroke();
+    ctx.restore();
+
+    // inner counter-rotating hex, smaller
+    ctx.save();
+    ctx.rotate(-rotation * 1.4);
+    ctx.strokeStyle = flashing ? '#ffffff' : '#eaf6ff';
+    ctx.lineWidth = 2;
+    ctx.globalAlpha = 0.6;
+    ctx.beginPath();
+    for (let i = 0; i < 6; i++) {
+      const ang = (Math.PI * 2 / 6) * i;
+      const px = Math.cos(ang) * r * 0.6, py = Math.sin(ang) * r * 0.6;
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.stroke();
+    ctx.restore();
+
+    // glowing core, brighter as it nears its next ring volley
+    const readyT = en.nextRingAt - performance.now() < CONFIG.boss2.telegraphMs
+      ? 1 - Math.max(0, en.nextRingAt - performance.now()) / CONFIG.boss2.telegraphMs
+      : 0;
+    ctx.fillStyle = flashing ? '#ffffff' : coreColor;
+    ctx.globalAlpha = 0.9;
+    ctx.beginPath(); ctx.arc(0, 0, r * (0.32 + readyT * 0.18), 0, Math.PI * 2); ctx.fill();
+
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  }
+
+  function render() {
+    ctx.save();
+    ctx.clearRect(0, 0, VW, VH);
+
+    let shakeX = 0, shakeY = 0;
+    if (shake > 0.3) { shakeX = (rand() - 0.5) * shake; shakeY = (rand() - 0.5) * shake; }
+    ctx.translate(shakeX, shakeY);
+    ctx.scale(zoom, zoom); // zoom out on smaller screens so more of the world is visible
+
+    const bg = ctx.createLinearGradient(0, 0, 0, VVH);
+    bg.addColorStop(0, '#10101c'); bg.addColorStop(1, '#050508');
+    ctx.fillStyle = bg;
+    ctx.fillRect(-40, -40, VVW + 80, VVH + 80);
+
+    // Far background layer: parallax stars drift slower than the world (only a fraction of camera movement).
+    ctx.save();
+    ctx.translate(-cam.x * 0.6, -cam.y * 0.6);
+    for (const s of farStars) {
+      ctx.globalAlpha = s.baseAlpha;
+      ctx.fillStyle = '#bfe8ff';
+      ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    ctx.restore();
+
+    ctx.translate(-cam.x, -cam.y); // switch to world space
+
+    // Soft drifting nebula clouds behind everything else.
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const t = performance.now() / 1000;
+    for (const n of nebulae) {
+      const nx = n.x + Math.sin(t * 0.05 + n.phase) * n.driftX * 20;
+      const ny = n.y + Math.cos(t * 0.04 + n.phase) * n.driftY * 20;
+      const grad = ctx.createRadialGradient(nx, ny, 0, nx, ny, n.r);
+      grad.addColorStop(0, n.color);
+      grad.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.globalAlpha = n.alpha;
+      ctx.fillStyle = grad;
+      ctx.beginPath(); ctx.arc(nx, ny, n.r, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    ctx.restore();
+
+    for (const s of stars) {
+      const tw = 0.6 + 0.4 * Math.sin(performance.now() / 1000 * s.twinkleFreq + s.twinklePhase);
+      ctx.globalAlpha = s.baseAlpha * tw;
+      ctx.fillStyle = '#bfe8ff';
+      ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    ctx.strokeStyle = 'rgba(90,200,255,0.06)'; ctx.lineWidth = 1;
+    const gap = 48;
+    const startX = Math.floor(cam.x / gap) * gap, startY = Math.floor(cam.y / gap) * gap;
+    ctx.beginPath();
+    for (let x = startX; x < cam.x + VVW + gap; x += gap) { ctx.moveTo(x, cam.y - gap); ctx.lineTo(x, cam.y + VVH + gap); }
+    for (let y = startY; y < cam.y + VVH + gap; y += gap) { ctx.moveTo(cam.x - gap, y); ctx.lineTo(cam.x + VVW + gap, y); }
+    ctx.stroke();
+
+    ctx.strokeStyle = 'rgba(124,252,255,0.28)'; ctx.lineWidth = 3;
+    ctx.strokeRect(0, 0, WORLD_W, WORLD_H);
+
+    for (const ob of obstacles) {
+      const flashing = ob.flashUntil && performance.now() < ob.flashUntil;
+      const flashT = flashing ? Math.max(0, (ob.flashUntil - performance.now()) / 180) : 0;
+      ctx.save();
+      ctx.translate(ob.x, ob.y);
+      ctx.rotate(ob.rot);
+      // soft glow halo — flares up brighter and wider right after a hit
+      ctx.globalCompositeOperation = 'lighter';
+      const haloR = ob.r * (1.6 + flashT * 0.9);
+      const halo = ctx.createRadialGradient(0, 0, ob.r * 0.3, 0, 0, haloR);
+      halo.addColorStop(0, flashing ? '#ffffff' : ob.color);
+      halo.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.globalAlpha = 0.22 + flashT * 0.55;
+      ctx.fillStyle = halo;
+      ctx.beginPath(); ctx.arc(0, 0, haloR, 0, Math.PI * 2); ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = 'source-over';
+      // solid body — lightens toward white on impact
+      ctx.beginPath();
+      ctx.moveTo(ob.points[0][0], ob.points[0][1]);
+      for (let i = 1; i < ob.points.length; i++) ctx.lineTo(ob.points[i][0], ob.points[i][1]);
+      ctx.closePath();
+      ctx.fillStyle = flashing ? `rgba(${13 + flashT * 200},${13 + flashT * 200},${22 + flashT * 220},1)` : '#0d0d16';
+      ctx.fill();
+      // impact "pop" on hit: a slightly thicker/brighter stroke instead of shadowBlur.
+      // shadowBlur is a software-blur pass that's cheap on desktop Chrome's
+      // GPU-accelerated canvas but very slow on many Android WebViews — a couple
+      // of blurred obstacle strokes for ~180ms is enough to cause a visible stutter
+      // on phones even though it's invisible on PC. The extra-wide halo above
+      // already gives most of the "flash" look, so this is a plain stroke.
+      ctx.lineWidth = 2.5 + flashT * 3.5;
+      ctx.strokeStyle = flashing ? '#ffffff' : ob.color;
+      ctx.stroke();
+      // inner facet highlight
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      for (let i = 0; i < ob.points.length; i++) { ctx.lineTo(ob.points[i][0] * 0.55, ob.points[i][1] * 0.55); }
+      ctx.strokeStyle = ob.color;
+      ctx.globalAlpha = 0.25 + flashT * 0.4;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+      ctx.restore();
+    }
+
+    if (phase === 'playing' || phase === 'paused' || phase === 'over' || phase === 'levelup') {
+      ctx.globalCompositeOperation = 'lighter';
+      for (const p of particles) {
+        const twinkle = p.twinkleFreq ? 0.55 + 0.45 * Math.sin(p.life * p.twinkleFreq + (p.twinklePhase || 0)) : 1;
+        const alpha = Math.max(0, Math.min(1, p.life)) * twinkle;
+        if (alpha <= 0.02) continue;
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = p.color;
+        if (p.sparkle) {
+          // 4-point glitter star instead of a plain dot
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.spin || 0);
+          const r1 = p.size * 2.2, r2 = p.size * 0.5;
+          ctx.beginPath();
+          for (let k = 0; k < 8; k++) {
+            const ang = (Math.PI / 4) * k;
+            const rr = (k % 2 === 0) ? r1 : r2;
+            const px = Math.cos(ang) * rr, py = Math.sin(ang) * rr;
+            if (k === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+          }
+          ctx.closePath();
+          ctx.fill();
+          ctx.restore();
+        } else {
+          ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+        }
+      }
+      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = 'source-over';
+
+      ctx.globalCompositeOperation = 'lighter';
+      for (const o of orbs) {
+        const pulse = 0.7 + 0.3 * Math.sin(performance.now() / 180 + o.spin);
+        const isHp = o.type === 'hp';
+        const isCore = o.type === 'core';
+        ctx.globalAlpha = 0.35 * pulse;
+        ctx.fillStyle = isHp ? '#5cff9e' : (isCore ? '#ffd166' : '#c65fff');
+        ctx.beginPath(); ctx.arc(o.x, o.y, o.r * 2.2, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = 0.9;
+        ctx.fillStyle = isHp ? '#eafff0' : (isCore ? '#fff3d6' : '#f2d9ff');
+        ctx.beginPath(); ctx.arc(o.x, o.y, o.r * 0.7, 0, Math.PI * 2); ctx.fill();
+        if (isHp) {
+          ctx.fillStyle = '#0a3d24';
+          ctx.fillRect(o.x - o.r * 0.55, o.y - o.r * 0.16, o.r * 1.1, o.r * 0.32);
+          ctx.fillRect(o.x - o.r * 0.16, o.y - o.r * 0.55, o.r * 0.32, o.r * 1.1);
+        } else if (isCore) {
+          ctx.fillStyle = '#4a2f00';
+          ctx.beginPath();
+          ctx.moveTo(o.x + o.r * 0.12, o.y - o.r * 0.6);
+          ctx.lineTo(o.x - o.r * 0.42, o.y + o.r * 0.08);
+          ctx.lineTo(o.x - o.r * 0.02, o.y + o.r * 0.08);
+          ctx.lineTo(o.x - o.r * 0.12, o.y + o.r * 0.6);
+          ctx.lineTo(o.x + o.r * 0.42, o.y - o.r * 0.12);
+          ctx.lineTo(o.x + o.r * 0.02, o.y - o.r * 0.12);
+          ctx.closePath();
+          ctx.fill();
+        }
+      }
+      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = 'source-over';
+
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalAlpha = 0.4;
+      for (const b of bullets) {
+        ctx.fillStyle = b.color || '#ffffff';
+        ctx.beginPath(); ctx.arc(b.x, b.y, b.r * 2.1, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = 'source-over';
+      for (const b of bullets) {
+        ctx.fillStyle = b.color || '#ffffff';
+        ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2); ctx.fill();
+      }
+
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalAlpha = 0.35;
+      ctx.fillStyle = '#ffd166';
+      for (const b of enemyBullets) { ctx.beginPath(); ctx.arc(b.x, b.y, b.r * 2.4, 0, Math.PI * 2); ctx.fill(); }
+      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.fillStyle = '#fff0c2';
+      for (const b of enemyBullets) { ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2); ctx.fill(); }
+
+      for (const s of shockwaves) {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, s.alpha);
+        ctx.strokeStyle = s.color;
+        ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.stroke();
+        ctx.restore();
+      }
+
+      for (const en of enemies) {
+        const flashing = en.flashUntil && performance.now() < en.flashUntil;
+        if (en.type === 'ghost') {
+          drawGhost(en.x, en.y, en.angle, en.r, en.color, flashing);
+        } else if (en.type === 'sentinel') {
+          drawSentinel(en, flashing);
+        } else {
+          drawEnemyCircle(en.x, en.y, en.angle, en.r, flashing ? '#ffffff' : en.color);
+        }
+        if (en.hp < en.maxHp) {
+          ctx.fillStyle = 'rgba(255,255,255,0.16)';
+          ctx.fillRect(en.x - en.r, en.y - en.r - 10, en.r * 2, 4);
+          ctx.fillStyle = '#5cff9e';
+          ctx.fillRect(en.x - en.r, en.y - en.r - 10, en.r * 2 * (en.hp / en.maxHp), 4);
+        }
+      }
+
+      if (player.thornRadius > 0) {
+        ctx.save();
+        ctx.globalAlpha = 0.16 + Math.sin(performance.now() / 220) * 0.05;
+        ctx.strokeStyle = '#ff5fd6';
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(player.x, player.y, player.thornRadius, 0, Math.PI * 2); ctx.stroke();
+        ctx.restore();
+      }
+      if (player.shieldCharges > 0) {
+        ctx.save();
+        ctx.strokeStyle = '#7cfcff';
+        ctx.globalAlpha = 0.55;
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(player.x, player.y, player.r + 8, 0, Math.PI * 2); ctx.stroke();
+        ctx.restore();
+      }
+
+      if (combo > 2) {
+        ctx.save();
+        const comboT = Math.min(1, (combo - 2) / (CONFIG.combo.max - 2));
+        const hue = (performance.now() / 12) % 360;
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.globalAlpha = 0.18 + comboT * 0.22 + Math.sin(performance.now() / 150) * 0.05;
+        ctx.strokeStyle = `hsl(${hue}, 100%, 65%)`;
+        ctx.lineWidth = 2 + comboT * 3;
+        ctx.beginPath(); ctx.arc(player.x, player.y, player.r + 14 + comboT * 6, 0, Math.PI * 2); ctx.stroke();
+        ctx.restore();
+      }
+
+      drawPlayerTrail(performance.now());
+      drawLaserBeam(player);
+      drawPlayerAt(player.x, player.y, player.angle, player.r + 4, player);
+    }
+
+    ctx.restore();
+
+    if (bossActive && enemies.some(e => e.type === 'ghost')) {
+      const now = performance.now();
+      const intro = now < bossBannerUntil;
+      ctx.save();
+      const pulse = 0.7 + 0.3 * Math.sin(now / 260);
+      ctx.textAlign = 'center';
+      ctx.font = intro ? '800 30px "Segoe UI", sans-serif' : '800 15px "Segoe UI", sans-serif';
+      ctx.fillStyle = '#ff5fd6';
+      ctx.shadowColor = '#ff5fd6';
+      ctx.shadowBlur = intro ? 22 : 12;
+      ctx.globalAlpha = intro ? 1 : pulse;
+      ctx.fillText('BOSS FIGHT — THE GHOST GANG', VW / 2, intro ? VH * 0.32 : 34);
+      ctx.restore();
+    } else if (bossActive && enemies.some(e => e.type === 'sentinel')) {
+      const now = performance.now();
+      const intro = now < bossBannerUntil;
+      const sentinel = enemies.find(e => e.type === 'sentinel');
+      ctx.save();
+      const pulse = 0.7 + 0.3 * Math.sin(now / 260);
+      ctx.textAlign = 'center';
+      ctx.font = intro ? '800 30px "Segoe UI", sans-serif' : '800 15px "Segoe UI", sans-serif';
+      ctx.fillStyle = sentinel && sentinel.enraged ? '#ff4d4d' : '#5fe0ff';
+      ctx.shadowColor = ctx.fillStyle;
+      ctx.shadowBlur = intro ? 22 : 12;
+      ctx.globalAlpha = intro ? 1 : pulse;
+      const label = sentinel && sentinel.enraged ? 'THE SENTINEL — OVERDRIVE' : `BOSS FIGHT — ${CONFIG.boss2.name}`;
+      ctx.fillText(label, VW / 2, intro ? VH * 0.32 : 34);
+      ctx.restore();
+    }
+  }
+
+  // ── HUD — DOM text/bar updates each frame ──
+  function updateHud() {
+    scoreEl.textContent = Math.floor(score);
+    comboEl.textContent = `x${combo.toFixed(1)} combo`;
+    highScoreTagEl.textContent = `BEST ${Math.floor(highScore)}`;
+    hpFillEl.style.width = (Math.max(0, player.hp) / player.maxHp * 100) + '%';
+    waveEl.textContent = `WAVE ${wave}`;
+    weaponTagEl.textContent = player.weapon;
+    if (player.weapon === 'laser') fireBtn.classList.remove('hidden');
+    else { fireBtn.classList.add('hidden'); if (fireBtnDown) setFireBtnDown(false); }
+    levelEl.textContent = `LV ${player.level}`;
+    expFillEl.style.width = Math.min(100, (player.exp / player.expToNext) * 100) + '%';
+    if (player.weapon === 'laser') {
+      const lc = CONFIG.weapons.laser;
+      const heatPct = Math.round((player.laserHeat / lc.maxHeat) * 100);
+      const overdriveOn = performance.now() < player.overdriveUntil;
+      const lowHeat = !overdriveOn && !player.laserOverheated && (player.laserHeat / lc.maxHeat) < lc.lowHeatWarnFrac;
+      if (player.laserOverheated) {
+        ammoTagEl.textContent = `OVERHEATED ${heatPct}%`;
+        ammoTagEl.classList.add('reloading');
+        ammoTagEl.classList.remove('lowheat');
+      } else {
+        ammoTagEl.textContent = overdriveOn ? `BEAM ${heatPct}% — OVERDRIVE` : `BEAM ${heatPct}%`;
+        ammoTagEl.classList.remove('reloading');
+        ammoTagEl.classList.toggle('lowheat', lowHeat);
+      }
+    } else if (player.reloading) {
+      const remain = Math.max(0, player.reloadEndAt - performance.now());
+      ammoTagEl.textContent = `RELOADING… ${(remain / 1000).toFixed(1)}s`;
+      ammoTagEl.classList.add('reloading');
+      ammoTagEl.classList.remove('lowheat');
+    } else {
+      ammoTagEl.textContent = (performance.now() < player.overdriveUntil) ? `${player.magCurrent} / ${player.magazineSize} — OVERDRIVE` : `${player.magCurrent} / ${player.magazineSize}`;
+      ammoTagEl.classList.remove('reloading');
+      ammoTagEl.classList.remove('lowheat');
+    }
+    if (player.hp > 0 && player.hp <= CONFIG.player.lowHpThreshold) vignetteEl.classList.add('active');
+    else vignetteEl.classList.remove('active');
+    if (recordBannerHideAt && performance.now() > recordBannerHideAt) {
+      recordBannerEl.classList.remove('active');
+      recordBannerHideAt = 0;
+    }
+  }
+
+  // ── GAME LOOP BOOTSTRAP — rAF loop + initial boot ──
+  function loop(now) {
+    const dt = Math.min((now - lastFrame) / 1000, 0.05);
+    lastFrame = now;
+    if (phase === 'playing') { update(dt, now); updateHud(); }
+    render();
+    requestAnimationFrame(loop);
+  }
+
+  showStartOverlay();
+  requestAnimationFrame((t) => { lastFrame = t; requestAnimationFrame(loop); });
+})();
+</script>
+</body>
+</html>
