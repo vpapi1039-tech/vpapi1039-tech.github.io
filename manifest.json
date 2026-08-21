@@ -2,7 +2,7 @@
   "name": "Neon Breach",
   "short_name": "Neon Breach",
   "description": "Neon Breach — top-down neon arena shooter",
-  "start_url": "./NeonBreach.html",
+  "start_url": "./index.html",
   "display": "fullscreen",
   "orientation": "landscape",
   "background_color": "#05050a",
